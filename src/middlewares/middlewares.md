@@ -1,0 +1,1 @@
+El middleware es una función que se ejecuta antes de llegar a tu controlador. Si los datos no pasan la prueba, el middleware rechaza la petición y tu controlador de Supabase ni se entera.
