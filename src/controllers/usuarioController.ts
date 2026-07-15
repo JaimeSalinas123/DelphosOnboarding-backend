@@ -1,12 +1,12 @@
-import {  Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 
-//registro de nuevos usuarios
+// Registro de nuevos usuarios
 export const registrarUsuario = async (req: Request, res: Response): Promise<void> => {
   const { email, password, nombre, departamento } = req.body;
 
   try {
-    // Registramos en Auth de Supabase
+    // 1. Registramos en Auth de Supabase (Bóveda oculta)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email,
       password: password,
@@ -17,12 +17,13 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
        return;
     }
 
-    //guardamos en nuestra tabla de usuario
+    // 2. Guardamos en nuestra tabla pública de usuario
     if (authData.user) {
       const { error: dbError } = await supabase.from('usuario').insert([
         {
           id: authData.user.id,
           nombre: nombre,
+          email: email, // <-- Columna añadida para el candado UNIQUE
           departamento: departamento,
           rol: 'nuevo_integrante' 
         }
@@ -44,12 +45,12 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
   }
 };
 
-//inicio de sesion de usuarios
+// Inicio de sesion de usuarios
 export const loginUsuario = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   try {
-    //Autenticamos con Supabase
+    // 1. Autenticamos con Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -60,7 +61,7 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
        return;
     }
 
-    //Traemos los datos extra del perfil
+    // 2. Traemos los datos extra del perfil
     const { data: perfilData } = await supabase
       .from('usuario')
       .select('nombre, departamento, rol')
