@@ -1,16 +1,34 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet'; // <-- Nuevo Import
 import { supabase } from './config/supabase';
 import usuarioRoutes from './routes/usuarioRoutes';
 
 const app = express();
 const port = 4000;
 
+// 1. Cabeceras de seguridad Helmet (Mitiga Clickjacking, XSS básico, sniffing MIME)
+app.use(helmet());
+
+// 2. CORS restrictivo de producción
+const allowedOrigins = ['http://localhost:3000']; // Sincronizado con el puerto de tu frontend Next.js
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permitimos peticiones sin origen (como llamadas de servidores backend a backend o Postman en desarrollo si es necesario)
+    // Para producción estricta se remueve el !origin
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Petición bloqueada por políticas de seguridad de CORS'));
+    }
+  },
+  credentials: false // No permitimos credenciales de sesión arbitrarias por CORS
+}));
+
 // Middleware para que Express entienda JSON
-app.use(cors());
 app.use(express.json());
 
-// Dejamos tu ruta de prueba intacta por si quieres monitorear la conexión
+// Dejamos tu ruta de prueba intacta
 app.get('/test-db', async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase.from('usuario').select('*');
@@ -22,8 +40,6 @@ app.get('/test-db', async (req: Request, res: Response) => {
 });
 
 // APLICAMOS LAS RUTAS REFACTORIZADAS
-// Todas las rutas dentro de usuarioRoutes tendrán el prefijo '/api'
-app.use(express.json());
 app.use('/api', usuarioRoutes);
 
 // Encendemos el servidor
