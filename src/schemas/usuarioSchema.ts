@@ -36,7 +36,7 @@ export const registroSchema = z.object({
                      'La Plaza Digital', 
                      'Relaciones Corporativas', 
                      'Research & Development'
-                   ], { 
+                   ] as const, { 
                      message: "El departamento seleccionado no es válido." 
                    })
                  ),
