@@ -94,3 +94,60 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
+// --- NUEVAS FUNCIONES DE RECUPERACIÓN DE CONTRASEÑA ---
+
+// Solicitar recuperación de contraseña
+export const solicitarRecuperacion = async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body;
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // Esta es la URL a la que Supabase mandará al usuario cuando haga clic en el correo
+      redirectTo: 'http://localhost:3000/resetear-password',
+    });
+
+    if (error) {
+       res.status(400).json({ error: error.message });
+       return;
+    }
+
+    res.status(200).json({ 
+      mensaje: 'Si el correo existe en nuestro sistema, hemos enviado un enlace de recuperación.' 
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Ejecutar el reseteo de la contraseña con el token seguro
+export const resetearPassword = async (req: Request, res: Response): Promise<void> => {
+  const { access_token, refresh_token, new_password } = req.body;
+
+  try {
+    // 1. Le decimos a Supabase quién está haciendo la petición usando los tokens del correo
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (sessionError) {
+      res.status(401).json({ error: 'El enlace de recuperación ha expirado o es inválido.' });
+      return;
+    }
+
+    // 2. Si los tokens son válidos, actualizamos la contraseña
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: new_password
+    });
+
+    if (updateError) {
+      res.status(400).json({ error: updateError.message });
+      return;
+    }
+
+    res.status(200).json({ mensaje: '¡Contraseña actualizada correctamente!' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
