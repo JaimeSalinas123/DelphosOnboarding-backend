@@ -4,7 +4,7 @@ import { z } from 'zod';
 const sanitizeString = (val: string) => {
   return val
     .replace(/[\u0000-\u001F\u007F]/g, '') // Elimina caracteres de control ASCII invisibles
-    .replace(/[<>]/g, '')                 // Evita inyección básica de etiquetas HTML/XSS
+    .replace(/[<>]/g, '')                // Evita inyección básica de etiquetas HTML/XSS
     .trim();
 };
 
@@ -31,7 +31,14 @@ export const registroSchema = z.object({
   departamento: z.string({ message: "El departamento es obligatorio" })
                  .transform(sanitizeString)
                  .pipe(
-                   z.string().min(2, "Debes especificar un departamento válido")
+                   z.enum([
+                     'Capital Humano', 
+                     'La Plaza Digital', 
+                     'Relaciones Corporativas', 
+                     'Research & Development'
+                   ], { 
+                     message: "El departamento seleccionado no es válido." 
+                   })
                  ),
                  
   // Honeypot: Campo opcional para que Zod no lo rechace con .strict() si lo envía un bot
@@ -63,4 +70,19 @@ export const loginSchema = z.object({
           .transform(val => sanitizeString(val).toLowerCase())
           .pipe(z.string().email("El formato del correo no es válido")),
   password: z.string({ message: "La contraseña es obligatoria" }).min(1, "La contraseña no puede estar vacía")
+});
+
+// --- NUEVOS ESQUEMAS PARA RECUPERACIÓN DE CONTRASEÑA ---
+
+export const recuperarSchema = z.object({
+  email: z.string({ message: "El correo es obligatorio" })
+          .transform(val => sanitizeString(val).toLowerCase())
+          .pipe(z.string().email("El formato del correo no es válido"))
+});
+
+export const resetearSchema = z.object({
+  access_token: z.string({ message: "Token de acceso faltante o inválido" }),
+  refresh_token: z.string({ message: "Token de refresco faltante o inválido" }),
+  new_password: z.string({ message: "La nueva contraseña es obligatoria" })
+                 .min(8, "La contraseña debe tener mínimo 8 caracteres")
 });
