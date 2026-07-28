@@ -61,6 +61,24 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
   }
 };
 
+// Obtener todos los usuarios registrados
+export const obtenerUsuarios = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .from('usuario')
+      .select('id, nombre, email, departamento, rol');
+
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+
+    res.status(200).json({ usuarios: data });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 // Inicio de sesion de usuarios
 export const loginUsuario = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
