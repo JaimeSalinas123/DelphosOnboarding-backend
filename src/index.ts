@@ -1,28 +1,27 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import helmet from 'helmet'; // <-- Nuevo Import
+import helmet from 'helmet';
 import { supabase } from './config/supabase';
 import usuarioRoutes from './routes/usuarioRoutes';
+import estudioRoutes from './routes/estudioRoutes'; // <-- NUEVO IMPORT
 
 const app = express();
 const port = 4000;
 
-// 1. Cabeceras de seguridad Helmet (Mitiga Clickjacking, XSS básico, sniffing MIME)
+// 1. Cabeceras de seguridad Helmet
 app.use(helmet());
 
 // 2. CORS restrictivo de producción
-const allowedOrigins = ['http://localhost:3000']; // Sincronizado con el puerto de tu frontend Next.js
+const allowedOrigins = ['http://localhost:3000']; 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitimos peticiones sin origen (como llamadas de servidores backend a backend o Postman en desarrollo si es necesario)
-    // Para producción estricta se remueve el !origin
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Petición bloqueada por políticas de seguridad de CORS'));
     }
   },
-  credentials: false // No permitimos credenciales de sesión arbitrarias por CORS
+  credentials: false 
 }));
 
 // Middleware para que Express entienda JSON
@@ -39,8 +38,9 @@ app.get('/test-db', async (req: Request, res: Response) => {
   }
 });
 
-// APLICAMOS LAS RUTAS REFACTORIZADAS
+// APLICAMOS LAS RUTAS
 app.use('/api', usuarioRoutes);
+app.use('/api/estudio', estudioRoutes); // <-- NUEVA RUTA DE ESTUDIO
 
 // Encendemos el servidor
 app.listen(port, () => {
