@@ -79,6 +79,38 @@ export const obtenerUsuarios = async (req: Request, res: Response): Promise<void
   }
 };
 
+// Actualizar el rol de un usuario específico (solo administradores)
+export const actualizarRolUsuario = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { rol } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('usuario')
+      .update({ rol })
+      .eq('id', id)
+      .select('id, nombre, email, departamento, rol')
+      .single();
+
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+
+    if (!data) {
+      res.status(404).json({ error: 'Usuario no encontrado.' });
+      return;
+    }
+
+    res.status(200).json({
+      mensaje: 'Rol actualizado correctamente.',
+      usuario: data
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 // Inicio de sesion de usuarios
 export const loginUsuario = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
