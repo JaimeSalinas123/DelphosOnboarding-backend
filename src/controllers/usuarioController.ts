@@ -61,12 +61,25 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// Obtener todos los usuarios registrados
+// Obtener todos los usuarios registrados (admite filtro por departamento y búsqueda por nombre)
 export const obtenerUsuarios = async (req: Request, res: Response): Promise<void> => {
+  const { departamento, nombre } = req.query;
+
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('usuario')
       .select('id, nombre, email, departamento, rol');
+
+    if (departamento && typeof departamento === 'string') {
+      query = query.eq('departamento', departamento);
+    }
+
+    if (nombre && typeof nombre === 'string') {
+      // ilike hace la búsqueda insensible a mayúsculas/minúsculas y parcial (contiene el texto)
+      query = query.ilike('nombre', `%${nombre}%`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       res.status(400).json({ error: error.message });
