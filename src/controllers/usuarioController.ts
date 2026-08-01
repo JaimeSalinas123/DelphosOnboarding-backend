@@ -61,12 +61,25 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// Obtener todos los usuarios registrados
+// Obtener todos los usuarios registrados (admite filtro por departamento y búsqueda por nombre)
 export const obtenerUsuarios = async (req: Request, res: Response): Promise<void> => {
+  const { departamento, nombre } = req.query;
+
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('usuario')
       .select('id, nombre, email, departamento, rol');
+
+    if (departamento && typeof departamento === 'string') {
+      query = query.eq('departamento', departamento);
+    }
+
+    if (nombre && typeof nombre === 'string') {
+      // ilike hace la búsqueda insensible a mayúsculas/minúsculas y parcial (contiene el texto)
+      query = query.ilike('nombre', `%${nombre}%`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       res.status(400).json({ error: error.message });
@@ -74,6 +87,38 @@ export const obtenerUsuarios = async (req: Request, res: Response): Promise<void
     }
 
     res.status(200).json({ usuarios: data });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Actualizar el rol de un usuario específico (solo administradores)
+export const actualizarRolUsuario = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { rol } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('usuario')
+      .update({ rol })
+      .eq('id', id)
+      .select('id, nombre, email, departamento, rol')
+      .single();
+
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+
+    if (!data) {
+      res.status(404).json({ error: 'Usuario no encontrado.' });
+      return;
+    }
+
+    res.status(200).json({
+      mensaje: 'Rol actualizado correctamente.',
+      usuario: data
+    });
   } catch (error: any) {
     res.status(500).json({ error: 'Error interno del servidor' });
   }

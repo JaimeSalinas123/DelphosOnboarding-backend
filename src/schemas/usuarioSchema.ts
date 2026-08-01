@@ -86,3 +86,11 @@ export const resetearSchema = z.object({
   new_password: z.string({ message: "La nueva contraseña es obligatoria" })
                  .min(8, "La contraseña debe tener mínimo 8 caracteres")
 });
+
+// --- ESQUEMA PARA ACTUALIZAR EL ROL DE UN USUARIO ---
+
+export const actualizarRolSchema = z.object({
+  rol: z.enum(['nuevo_integrante', 'evaluador', 'administrador'] as const, {
+    message: "El rol seleccionado no es válido."
+  })
+}).strict();

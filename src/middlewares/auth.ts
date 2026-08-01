@@ -32,3 +32,25 @@ export const verificarToken = async (req: Request, res: Response, next: NextFunc
      res.status(500).json({ error: 'Error interno al verificar el token' });
   }
 };
+
+// Debe usarse siempre después de verificarToken, ya que depende de (req as any).user
+export const verificarAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const usuarioAuth = (req as any).user;
+
+  try {
+    const { data: perfil, error } = await supabase
+      .from('usuario')
+      .select('rol')
+      .eq('id', usuarioAuth.id)
+      .single();
+
+    if (error || !perfil || perfil.rol !== 'administrador') {
+      res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    res.status(500).json({ error: 'Error interno al verificar permisos' });
+  }
+};
