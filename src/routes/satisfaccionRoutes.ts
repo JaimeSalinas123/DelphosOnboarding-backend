@@ -4,11 +4,12 @@ import {
   crearPregunta,
   actualizarPregunta,
   eliminarPregunta,
-  enviarEncuesta
+  enviarEncuesta,
+  obtenerResultados
 } from '../controllers/satisfaccionController';
 import { validarEsquema } from '../middlewares/validador';
 import { preguntaSatisfaccionSchema, enviarEncuestaSchema } from '../schemas/satisfaccionSchema';
-import { verificarToken } from '../middlewares/auth';
+import { verificarToken, verificarAdmin } from '../middlewares/auth';
 
 const router = Router();
 
@@ -20,5 +21,8 @@ router.delete('/preguntas/:id', verificarToken, eliminarPregunta);
 
 // El pasante envía sus respuestas de la encuesta (una sola vez)
 router.post('/encuestas', verificarToken, validarEsquema(enviarEncuestaSchema), enviarEncuesta);
+
+// Listado de resultados de todos los usuarios (solo administradores)
+router.get('/resultados', verificarToken, verificarAdmin, obtenerResultados);
 
 export default router;

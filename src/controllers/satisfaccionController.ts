@@ -122,3 +122,30 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
     res.status(400).json({ error: error.message });
   }
 };
+
+// 6. Listar las respuestas de todos los usuarios que completaron la encuesta (solo administradores)
+export const obtenerResultados = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .from('encuestas_satisfaccion')
+      .select(`
+        id,
+        estado,
+        fecha_completado,
+        usuario:usuario_id ( id, nombre, email, departamento ),
+        respuestas:respuestas_satisfaccion (
+          id,
+          respuesta_numerica,
+          respuesta_texto,
+          pregunta:pregunta_id ( id, seccion, pregunta, orden, tipo_respuesta )
+        )
+      `)
+      .eq('estado', 'completada')
+      .order('fecha_completado', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
