@@ -61,14 +61,19 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// Obtener todos los usuarios registrados (admite filtro por departamento y búsqueda por nombre)
+// Obtener todos los usuarios registrados (admite filtro por departamento, búsqueda por nombre y paginación)
 export const obtenerUsuarios = async (req: Request, res: Response): Promise<void> => {
   const { departamento, nombre } = req.query;
+
+  const pagina = Math.max(parseInt(req.query.pagina as string) || 1, 1);
+  const limite = Math.min(Math.max(parseInt(req.query.limite as string) || 10, 1), 100);
+  const desde = (pagina - 1) * limite;
+  const hasta = desde + limite - 1;
 
   try {
     let query = supabase
       .from('usuario')
-      .select('id, nombre, email, departamento, rol');
+      .select('id, nombre, email, departamento, rol', { count: 'exact' });
 
     if (departamento && typeof departamento === 'string') {
       query = query.eq('departamento', departamento);
@@ -79,14 +84,22 @@ export const obtenerUsuarios = async (req: Request, res: Response): Promise<void
       query = query.ilike('nombre', `%${nombre}%`);
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query.range(desde, hasta);
 
     if (error) {
       res.status(400).json({ error: error.message });
       return;
     }
 
-    res.status(200).json({ usuarios: data });
+    res.status(200).json({
+      usuarios: data,
+      paginacion: {
+        pagina,
+        limite,
+        total: count ?? 0,
+        totalPaginas: Math.ceil((count ?? 0) / limite)
+      }
+    });
   } catch (error: any) {
     res.status(500).json({ error: 'Error interno del servidor' });
   }

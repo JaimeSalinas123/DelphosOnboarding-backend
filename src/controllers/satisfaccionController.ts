@@ -123,10 +123,15 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// 6. Listar las respuestas de todos los usuarios que completaron la encuesta (solo administradores)
+// 6. Listar las respuestas de todos los usuarios que completaron la encuesta (solo administradores, con paginación)
 export const obtenerResultados = async (req: Request, res: Response): Promise<void> => {
+  const pagina = Math.max(parseInt(req.query.pagina as string) || 1, 1);
+  const limite = Math.min(Math.max(parseInt(req.query.limite as string) || 10, 1), 100);
+  const desde = (pagina - 1) * limite;
+  const hasta = desde + limite - 1;
+
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('encuestas_satisfaccion')
       .select(`
         id,
@@ -139,12 +144,22 @@ export const obtenerResultados = async (req: Request, res: Response): Promise<vo
           respuesta_texto,
           pregunta:pregunta_id ( id, seccion, pregunta, orden, tipo_respuesta )
         )
-      `)
+      `, { count: 'exact' })
       .eq('estado', 'completada')
-      .order('fecha_completado', { ascending: false });
+      .order('fecha_completado', { ascending: false })
+      .range(desde, hasta);
 
     if (error) throw error;
-    res.json(data);
+
+    res.json({
+      resultados: data,
+      paginacion: {
+        pagina,
+        limite,
+        total: count ?? 0,
+        totalPaginas: Math.ceil((count ?? 0) / limite)
+      }
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
