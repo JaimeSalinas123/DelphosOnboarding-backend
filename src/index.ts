@@ -3,7 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { supabase } from './config/supabase';
 import usuarioRoutes from './routes/usuarioRoutes';
-import estudioRoutes from './routes/estudioRoutes'; // <-- NUEVO IMPORT
+import estudioRoutes from './routes/estudioRoutes';
+import chatbotRoutes from './routes/chatbotRoutes'; 
 import satisfaccionRoutes from './routes/satisfaccionRoutes';
 
 const app = express();
@@ -41,8 +42,9 @@ app.get('/test-db', async (req: Request, res: Response) => {
 
 // APLICAMOS LAS RUTAS
 app.use('/api', usuarioRoutes);
-app.use('/api/estudio', estudioRoutes); // <-- NUEVA RUTA DE ESTUDIO
+app.use('/api/estudio', estudioRoutes); 
 app.use('/api/satisfaccion', satisfaccionRoutes);
+app.use('/api/chat', chatbotRoutes);
 
 // Encendemos el servidor
 app.listen(port, () => {
