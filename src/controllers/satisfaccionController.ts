@@ -66,3 +66,59 @@ export const eliminarPregunta = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ error: error.message });
   }
 };
+
+// 5. Envío de la encuesta de satisfacción por parte del pasante (una sola vez por usuario)
+export const enviarEncuesta = async (req: Request, res: Response): Promise<void> => {
+  const usuarioId = (req as any).user.id;
+  const { respuestas } = req.body;
+
+  try {
+    // 1. Un usuario solo puede completar la encuesta una vez
+    const { data: encuestaExistente, error: errorConsulta } = await supabase
+      .from('encuestas_satisfaccion')
+      .select('id')
+      .eq('usuario_id', usuarioId)
+      .maybeSingle();
+
+    if (errorConsulta) throw errorConsulta;
+
+    if (encuestaExistente) {
+      res.status(409).json({ error: 'Ya has completado la encuesta de satisfacción.' });
+      return;
+    }
+
+    // 2. Creamos la encuesta ligada al usuario autenticado
+    const { data: encuesta, error: errorEncuesta } = await supabase
+      .from('encuestas_satisfaccion')
+      .insert([{ usuario_id: usuarioId, estado: 'completada' }])
+      .select('id')
+      .single();
+
+    if (errorEncuesta) throw errorEncuesta;
+
+    // 3. Guardamos cada respuesta ligada a esa encuesta
+    const filasRespuestas = respuestas.map((r: any) => ({
+      encuesta_id: encuesta.id,
+      pregunta_id: r.pregunta_id,
+      respuesta_numerica: r.respuesta_numerica ?? null,
+      respuesta_texto: r.respuesta_texto ?? null,
+    }));
+
+    const { error: errorRespuestas } = await supabase
+      .from('respuestas_satisfaccion')
+      .insert(filasRespuestas);
+
+    if (errorRespuestas) {
+      // Sin las respuestas la encuesta queda inconsistente: la revertimos
+      await supabase.from('encuestas_satisfaccion').delete().eq('id', encuesta.id);
+      throw errorRespuestas;
+    }
+
+    res.status(201).json({
+      mensaje: '¡Encuesta de satisfacción enviada con éxito!',
+      encuestaId: encuesta.id
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
