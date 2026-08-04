@@ -66,3 +66,46 @@ export const eliminarPregunta = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ error: error.message });
   }
 };
+
+// ==========================================
+// NUEVO: CONTROLADORES DE RESULTADOS
+// ==========================================
+
+// 5. Guardar resultado de un usuario
+export const guardarResultado = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .from('resultados_estudio')
+      .insert([req.body])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 6. Obtener resultados para el panel de administración
+export const obtenerResultados = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Hacemos un JOIN con la tabla usuario para traer el nombre, email y departamento
+    const { data, error } = await supabase
+      .from('resultados_estudio')
+      .select(`
+        *,
+        usuario (
+          nombre,
+          email,
+          departamento
+        )
+      `)
+      .order('fecha_completado', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
