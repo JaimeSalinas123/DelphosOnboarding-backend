@@ -143,7 +143,7 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
     // 2. Traemos los datos extra del perfil
     const { data: perfilData } = await supabase
       .from('usuario')
-      .select('nombre, departamento, rol')
+      .select('id, nombre, departamento, rol') // <--- ¡AQUÍ ESTÁ EL CAMBIO!
       .eq('id', data.user.id)
       .single();
 

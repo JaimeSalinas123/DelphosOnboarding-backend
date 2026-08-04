@@ -11,3 +11,12 @@ export const preguntaSchema = z.object({
   respuesta_correcta: z.string({ message: 'La respuesta correcta es obligatoria' }).min(1, 'La respuesta no puede estar vacía'),
   explicacion: z.string().optional().nullable(),
 });
+
+export const resultadoSchema = z.object({
+  usuario_id: z.string({ message: 'El ID de usuario es obligatorio' }).uuid('ID de usuario inválido'),
+  metodo: z.enum(['cuestionario', 'flashcard', 'verdadero_falso'], { 
+    message: 'Método de estudio inválido' 
+  }),
+  puntuacion: z.number().optional().nullable(),
+  total_preguntas: z.number().optional().nullable(),
+});
