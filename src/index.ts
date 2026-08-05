@@ -4,8 +4,9 @@ import helmet from 'helmet';
 import { supabase } from './config/supabase';
 import usuarioRoutes from './routes/usuarioRoutes';
 import estudioRoutes from './routes/estudioRoutes';
-import chatbotRoutes from './routes/chatbotRoutes'; 
+import chatbotRoutes from './routes/chatbotRoutes';
 import satisfaccionRoutes from './routes/satisfaccionRoutes';
+import progresoRoutes from './routes/progresoRoutes';
 
 const app = express();
 const port = 4000;
@@ -42,8 +43,9 @@ app.get('/test-db', async (req: Request, res: Response) => {
 
 // APLICAMOS LAS RUTAS
 app.use('/api', usuarioRoutes);
-app.use('/api/estudio', estudioRoutes); 
+app.use('/api/estudio', estudioRoutes);
 app.use('/api/satisfaccion', satisfaccionRoutes);
+app.use('/api/progreso', progresoRoutes);
 app.use('/api/chat', chatbotRoutes);
 
 // Encendemos el servidor
