@@ -123,21 +123,26 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// 6. Listar las respuestas de todos los usuarios que completaron la encuesta (solo administradores, con paginación)
+// 6. Listar las respuestas de todos los usuarios que completaron la encuesta (solo administradores, con
+// paginación, filtro opcional por departamento y por rango de fecha de finalización)
 export const obtenerResultados = async (req: Request, res: Response): Promise<void> => {
   const pagina = Math.max(parseInt(req.query.pagina as string) || 1, 1);
   const limite = Math.min(Math.max(parseInt(req.query.limite as string) || 10, 1), 100);
   const desde = (pagina - 1) * limite;
   const hasta = desde + limite - 1;
 
+  const { departamento, fechaDesde, fechaHasta } = req.query;
+
   try {
-    const { data, error, count } = await supabase
+    // !inner en usuario: sin esto, .eq('usuario.departamento', ...) filtraría
+    // el objeto embebido pero no las filas de encuestas_satisfaccion en sí.
+    let query = supabase
       .from('encuestas_satisfaccion')
       .select(`
         id,
         estado,
         fecha_completado,
-        usuario:usuario_id ( id, nombre, email, departamento ),
+        usuario:usuario_id!inner ( id, nombre, email, departamento ),
         respuestas:respuestas_satisfaccion (
           id,
           respuesta_numerica,
@@ -145,7 +150,20 @@ export const obtenerResultados = async (req: Request, res: Response): Promise<vo
           pregunta:pregunta_id ( id, seccion, pregunta, orden, tipo_respuesta )
         )
       `, { count: 'exact' })
-      .eq('estado', 'completada')
+      .eq('estado', 'completada');
+
+    if (departamento && typeof departamento === 'string') {
+      query = query.eq('usuario.departamento', departamento);
+    }
+    if (fechaDesde && typeof fechaDesde === 'string') {
+      query = query.gte('fecha_completado', fechaDesde);
+    }
+    if (fechaHasta && typeof fechaHasta === 'string') {
+      // fechaHasta llega como YYYY-MM-DD (input type=date): incluimos el día completo.
+      query = query.lte('fecha_completado', `${fechaHasta}T23:59:59.999`);
+    }
+
+    const { data, error, count } = await query
       .order('fecha_completado', { ascending: false })
       .range(desde, hasta);
 
