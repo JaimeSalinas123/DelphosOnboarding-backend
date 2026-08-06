@@ -182,3 +182,22 @@ export const obtenerResultados = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ error: error.message });
   }
 };
+
+// 7. El pasante consulta si ya completó la encuesta, para que el front no lo
+// deje ni empezarla de nuevo (en vez de descubrirlo recién al enviar).
+export const obtenerMiEstado = async (req: Request, res: Response): Promise<void> => {
+  const usuarioId = (req as any).user.id;
+
+  try {
+    const { data, error } = await supabase
+      .from('encuestas_satisfaccion')
+      .select('id')
+      .eq('usuario_id', usuarioId)
+      .maybeSingle();
+
+    if (error) throw error;
+    res.json({ completada: !!data });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

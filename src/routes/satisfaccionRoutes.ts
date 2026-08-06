@@ -5,7 +5,8 @@ import {
   actualizarPregunta,
   eliminarPregunta,
   enviarEncuesta,
-  obtenerResultados
+  obtenerResultados,
+  obtenerMiEstado
 } from '../controllers/satisfaccionController';
 import { validarEsquema } from '../middlewares/validador';
 import { preguntaSatisfaccionSchema, enviarEncuestaSchema } from '../schemas/satisfaccionSchema';
@@ -21,6 +22,9 @@ router.delete('/preguntas/:id', verificarToken, eliminarPregunta);
 
 // El pasante envía sus respuestas de la encuesta (una sola vez)
 router.post('/encuestas', verificarToken, validarEsquema(enviarEncuestaSchema), enviarEncuesta);
+
+// El pasante consulta si ya completó la encuesta
+router.get('/mi-estado', verificarToken, obtenerMiEstado);
 
 // Listado de resultados de todos los usuarios (solo administradores)
 router.get('/resultados', verificarToken, verificarAdmin, obtenerResultados);
