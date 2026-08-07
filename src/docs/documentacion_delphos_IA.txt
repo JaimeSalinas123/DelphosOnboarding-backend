@@ -399,6 +399,51 @@ Retos de selección rápida (necesidad → solución)
 - Proyectar el comportamiento futuro de un indicador → Delphos Funciona.
 - Aprobar un documento desde el teléfono → Delphos Mobile.
 
+Nivel 1B — DEINSA, misión, visión y valores
+P: ¿Qué empresa desarrolló la plataforma Delphos? R: DEINSA Global Intelligence.
+P: ¿Dónde tiene su sede DEINSA Global Intelligence? R: En San José, Costa Rica.
+P: ¿Cuántos años de trayectoria tiene DEINSA Global Intelligence? R: Más de 35 años (desde la década de los 90).
+P: ¿En cuántos continentes tiene presencia DEINSA? R: 4 continentes, con más de 500 clientes/instituciones.
+P: ¿Cuál es la misión de DEINSA/Delphos? R: Desarrollar y ofrecer soluciones de software de vanguardia que empoderen a los clientes para optimizar su gobernanza, mejorar la toma de decisiones, garantizar el cumplimiento normativo y alcanzar sus objetivos estratégicos.
+P: ¿Cuál es la visión de Delphos? R: Ser el proveedor líder en Latinoamérica de soluciones de software para Gobernanza Corporativa en los sectores público y financiero.
+P: Menciona tres valores corporativos de Delphos. R: Por ejemplo, Integridad, Excelencia e Innovación (la lista completa también incluye Compromiso, Trabajo en Equipo, Seguridad y Responsabilidad Social).
+
+Nivel 2B — El modelo GRC y los pilares
+P: ¿Qué significa la sigla GRC? R: Gobierno (o Gobernanza), Riesgo y Cumplimiento.
+P: ¿Qué pilar del GRC se encarga de alinear equipos y medir el desempeño con transparencia? R: Gobierno (Governance).
+P: ¿Qué pilar del GRC identifica amenazas y crea planes de continuidad operativa? R: Riesgo (Risk).
+P: ¿Qué pilar del GRC mantiene un repositorio auditable para el cumplimiento de normativas? R: Cumplimiento (Compliance).
+
+Nivel 2C — Normativa costarricense
+P: ¿Qué ley de Costa Rica es la base normativa del módulo Delphos Elite? R: La Ley N.° 9635 de Fortalecimiento de las Finanzas Públicas.
+P: ¿Qué exige el MICITT a las instituciones públicas de Costa Rica en relación con COBIT 2019? R: Implementar 35 de los 40 objetivos de COBIT 2019 en un plazo de dos años.
+P: ¿Qué es SEVRI? R: El Sistema Específico de Valoración del Riesgo Institucional, una normativa costarricense para la gestión de riesgos en instituciones públicas.
+
+Nivel 3B — Siglas y métricas de continuidad
+P: ¿Qué significan las siglas MTPD, RTO y RPO en Delphos Continuum? R: MTPD es el Máximo Periodo Tolerable de Interrupción, RTO es el Tiempo Objetivo de Recuperación y RPO es el Punto Objetivo de Recuperación.
+P: ¿Qué es un cubo OLAP dentro de Delphos BI? R: Una estructura de datos multidimensional con drill-down y comparativos por periodo, que además permite gestionar y pivotear la información.
+P: ¿Cuáles son las 4 etapas del flujo de valor de Delphos Funciona? R: Datos → Patrones → Predicción → Decisión.
+P: ¿Con qué modelos de IA del mercado es compatible Delphos AI? R: Con modelos como ChatGPT, Gemini, Claude, DeepSeek y LLaMA, entre otros.
+
+Nivel 4B — El círculo virtuoso (grupos de color)
+P: ¿Qué color representa al grupo de planificación (Delphos Core) en el círculo virtuoso? R: Verde.
+P: ¿Qué color representa la gestión de riesgos y continuidad (Delphos Continuum)? R: Azul.
+P: ¿Qué color representa la gestión del desempeño (Delphos Elite)? R: Amarillo.
+P: ¿Qué color representa la información gerencial (Delphos BI)? R: Morado.
+P: ¿Qué color representa al Gobierno Corporativo? R: Rojo.
+
+Nivel 4C — Estándares y certificaciones (explicados)
+P: ¿Qué establece la norma ISO 22301? R: Los requisitos para la Gestión de la Continuidad del Negocio (BCM), base del módulo Delphos Continuum.
+P: ¿Es la norma ISO 31000 certificable, como ISO 27001? R: No. ISO 31000 son directrices para la gestión de riesgos; a diferencia de otras normas ISO, es una guía, no es certificable.
+P: ¿Qué marco ayuda a alinear la TI con los objetivos del negocio y a controlar riesgos tecnológicos? R: COBIT 2019.
+P: ¿Por qué es relevante que Delphos esté certificado bajo ISO 27001:2022? R: Porque un tercero auditó y validó que la plataforma opera con seguridad, integridad y confidencialidad, bajo la versión más reciente de esa norma.
+
+Nivel 4D — Beneficios y casos reales
+P: Menciona dos beneficios generales de implementar Delphos en una organización. R: Por ejemplo, decisiones más rápidas y auditorías más simples (también aplican menos riesgos y más control, equipos alineados, y mejores resultados).
+P: Menciona una institución de Costa Rica que use Delphos. R: Por ejemplo, la Presidencia de Costa Rica, MIDEPLAN, el BCR o el ICE, entre otras instituciones y municipalidades como Cartago o Alajuela.
+P: ¿En qué país se implementó Delphos en el Buró de Crédito? R: México.
+P: ¿Qué ventajas obtiene un cliente por el modelo SaaS de Delphos? R: Acceso desde cualquier lugar, alta disponibilidad, actualizaciones automáticas y menor costo de infraestructura propia, sin necesidad de instalar servidores físicos.
+
 ===============================================================================
 ## 12. PROGRAMA DE ONBOARDING (PLAN DE KPIs)
 ===============================================================================
