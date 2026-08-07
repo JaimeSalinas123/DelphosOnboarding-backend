@@ -154,7 +154,7 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
       respuestaTexto = "Lo siento, no tengo información sobre ese tema en mi base de conocimiento oficial de Onboarding. ¿Te puedo ayudar con alguna otra duda sobre la plataforma Delphos?";
       
       const rutaNuevos = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
-      const registro = `\n=========================================\nFECHA: ${new Date().toLocaleString('es-SV')}\nPREGUNTA NO DOCUMENTADA: ${inputLimpio}\n=========================================\n`;
+      const registro = `\n===============================================================================\n## ${inputLimpio}\n===============================================================================\nFecha de captura: ${new Date().toLocaleString('es-SV')}\n\n`;
       fs.appendFileSync(rutaNuevos, registro, 'utf-8');
     }
 
@@ -187,7 +187,7 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
 };
 
 // ============================================================================
-// ENDPOINTS DE DOCUMENTACIÓN IA (NUEVOS)
+// ENDPOINTS DE DOCUMENTACIÓN IA
 // ============================================================================
 
 // Ruta exacta del archivo maestro
@@ -200,7 +200,6 @@ export const obtenerDocumentacion = async (req: Request, res: Response): Promise
       res.status(404).json({ error: 'El archivo de documentación no existe en el servidor.' });
       return;
     }
-    // Leemos el .txt[cite: 1]
     const contenido = fs.readFileSync(docPath, 'utf8');
     res.json({ contenido });
   } catch (error: any) {
@@ -219,11 +218,44 @@ export const guardarDocumentacion = async (req: Request, res: Response): Promise
       return;
     }
 
-    // Sobrescribimos el .txt[cite: 1]
     fs.writeFileSync(docPath, contenido, 'utf8');
     res.json({ mensaje: 'Documentación de IA actualizada con éxito.' });
   } catch (error: any) {
     console.error("Error al escribir el archivo de la IA:", error);
     res.status(500).json({ error: 'Error interno al escribir el archivo de la IA.' });
+  }
+};
+
+// ============================================================================
+// ENDPOINTS DE NUEVOS CONOCIMIENTOS (IA)
+// ============================================================================
+
+const nuevosConocimientosPath = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
+
+// 1. Obtener los nuevos conocimientos (GET)
+export const obtenerNuevosConocimientos = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!fs.existsSync(nuevosConocimientosPath)) {
+      res.json({ contenido: '' });
+      return;
+    }
+    const contenido = fs.readFileSync(nuevosConocimientosPath, 'utf8');
+    res.json({ contenido });
+  } catch (error: any) {
+    console.error("Error al leer el archivo de nuevos conocimientos:", error);
+    res.status(500).json({ error: 'Error interno al leer los nuevos conocimientos.' });
+  }
+};
+
+// 2. Guardar/Sobrescribir los nuevos conocimientos (POST)
+export const guardarNuevosConocimientos = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { contenido } = req.body;
+    
+    fs.writeFileSync(nuevosConocimientosPath, contenido || '', 'utf8');
+    res.json({ mensaje: 'Nuevos conocimientos actualizados con éxito.' });
+  } catch (error: any) {
+    console.error("Error al escribir el archivo de nuevos conocimientos:", error);
+    res.status(500).json({ error: 'Error interno al escribir los nuevos conocimientos.' });
   }
 };

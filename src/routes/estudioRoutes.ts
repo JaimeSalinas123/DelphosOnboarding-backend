@@ -9,17 +9,18 @@ import {
 } from '../controllers/estudioController';
 import { validarEsquema } from '../middlewares/validador'; 
 import { preguntaSchema, resultadoSchema } from '../schemas/estudioSchema';
+import { verificarToken } from '../middlewares/auth'; // <-- AGREGAMOS EL CANDADO
 
 const router = Router();
 
-// Rutas CRUD para las preguntas (Panel Admin)
-router.get('/preguntas', obtenerPreguntas);
-router.post('/preguntas', validarEsquema(preguntaSchema), crearPregunta);
-router.put('/preguntas/:id', validarEsquema(preguntaSchema), actualizarPregunta);
-router.delete('/preguntas/:id', eliminarPregunta);
+// Rutas CRUD para las preguntas (Panel Admin) - AHORA PROTEGIDAS
+router.get('/preguntas', verificarToken, obtenerPreguntas);
+router.post('/preguntas', verificarToken, validarEsquema(preguntaSchema), crearPregunta);
+router.put('/preguntas/:id', verificarToken, validarEsquema(preguntaSchema), actualizarPregunta);
+router.delete('/preguntas/:id', verificarToken, eliminarPregunta);
 
-// Rutas para los Resultados (Panel Admin y Vistas Públicas)
-router.get('/resultados', obtenerResultados);
-router.post('/resultados', validarEsquema(resultadoSchema), guardarResultado);
+// Rutas para los Resultados (Panel Admin y Vistas Públicas) - AHORA PROTEGIDAS
+router.get('/resultados', verificarToken, obtenerResultados);
+router.post('/resultados', verificarToken, validarEsquema(resultadoSchema), guardarResultado);
 
 export default router;
