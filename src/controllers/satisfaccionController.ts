@@ -201,3 +201,59 @@ export const obtenerMiEstado = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: error.message });
   }
 };
+
+// 8. Consultar el código de acceso vigente (solo administradores, panel de configuración)
+export const obtenerCodigoEncuesta = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .from('codigo_encuesta')
+      .select('codigo, actualizado_en')
+      .eq('id', 1)
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 9. Actualizar el código de acceso (solo administradores)
+export const actualizarCodigoEncuesta = async (req: Request, res: Response): Promise<void> => {
+  const { codigo } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('codigo_encuesta')
+      .update({ codigo, actualizado_en: new Date().toISOString() })
+      .eq('id', 1)
+      .select('codigo, actualizado_en')
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 10. El pasante intenta desbloquear la encuesta con un código (comparación
+// insensible a mayúsculas/espacios, para no generar fricción de más).
+export const verificarCodigoEncuesta = async (req: Request, res: Response): Promise<void> => {
+  const { codigo } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('codigo_encuesta')
+      .select('codigo')
+      .eq('id', 1)
+      .single();
+
+    if (error) throw error;
+
+    const valido = data.codigo.trim().toLowerCase() === String(codigo).trim().toLowerCase();
+    res.json({ valido });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

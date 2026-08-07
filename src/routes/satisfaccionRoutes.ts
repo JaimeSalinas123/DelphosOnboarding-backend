@@ -6,11 +6,15 @@ import {
   eliminarPregunta,
   enviarEncuesta,
   obtenerResultados,
-  obtenerMiEstado
+  obtenerMiEstado,
+  obtenerCodigoEncuesta,
+  actualizarCodigoEncuesta,
+  verificarCodigoEncuesta
 } from '../controllers/satisfaccionController';
 import { validarEsquema } from '../middlewares/validador';
-import { preguntaSatisfaccionSchema, enviarEncuestaSchema } from '../schemas/satisfaccionSchema';
+import { preguntaSatisfaccionSchema, enviarEncuestaSchema, codigoEncuestaSchema } from '../schemas/satisfaccionSchema';
 import { verificarToken, verificarAdmin } from '../middlewares/auth';
+import { authRateLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
@@ -28,5 +32,13 @@ router.get('/mi-estado', verificarToken, obtenerMiEstado);
 
 // Listado de resultados de todos los usuarios (solo administradores)
 router.get('/resultados', verificarToken, verificarAdmin, obtenerResultados);
+
+// Código de acceso de la encuesta: consulta y edición (solo administradores)
+router.get('/codigo', verificarToken, verificarAdmin, obtenerCodigoEncuesta);
+router.put('/codigo', verificarToken, verificarAdmin, validarEsquema(codigoEncuestaSchema), actualizarCodigoEncuesta);
+
+// El pasante intenta desbloquear la encuesta con un código (con rate limit,
+// igual que login, para no dejar fuerza bruta libre sobre un código corto)
+router.post('/verificar-codigo', verificarToken, authRateLimiter, validarEsquema(codigoEncuestaSchema), verificarCodigoEncuesta);
 
 export default router;

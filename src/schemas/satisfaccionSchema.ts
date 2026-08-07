@@ -50,3 +50,9 @@ export const enviarEncuestaSchema = z.object({
   message: 'No puedes enviar más de una respuesta para la misma pregunta.',
   path: ['respuestas']
 });
+
+// --- ESQUEMA PARA EL CÓDIGO DE ACCESO DE LA ENCUESTA (admin y verificación del pasante) ---
+
+export const codigoEncuestaSchema = z.object({
+  codigo: z.string({ message: 'El código es obligatorio' }).min(1, 'El código no puede estar vacío'),
+});
