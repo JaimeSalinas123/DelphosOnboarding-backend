@@ -3,7 +3,9 @@ import {
   preguntarChatbot, 
   obtenerHistorial, 
   obtenerDocumentacion, 
-  guardarDocumentacion 
+  guardarDocumentacion,
+  obtenerNuevosConocimientos, 
+  guardarNuevosConocimientos  
 } from '../controllers/chatbotController';
 import { verificarToken } from '../middlewares/auth';
 
@@ -13,8 +15,12 @@ const router = Router();
 router.get('/historial', verificarToken, obtenerHistorial);
 router.post('/preguntar', verificarToken, preguntarChatbot);
 
-// Rutas de la Documentación (¡Estas son las que faltaban!)
+// Rutas de la Documentación Oficial
 router.get('/documentacion', verificarToken, obtenerDocumentacion);
 router.put('/documentacion', verificarToken, guardarDocumentacion);
+
+// Rutas de Nuevos Conocimientos
+router.get('/nuevos-conocimientos', verificarToken, obtenerNuevosConocimientos);
+router.post('/nuevos-conocimientos', verificarToken, guardarNuevosConocimientos);
 
 export default router;
