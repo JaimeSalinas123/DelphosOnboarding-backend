@@ -19,4 +19,5 @@ export const resultadoSchema = z.object({
   }),
   puntuacion: z.number().optional().nullable(),
   total_preguntas: z.number().optional().nullable(),
+  respuestas_detalle: z.array(z.any()).optional().nullable(), // <-- ESTA ES LA LÍNEA MÁGICA
 });
