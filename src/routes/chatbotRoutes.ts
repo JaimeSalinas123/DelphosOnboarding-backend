@@ -1,13 +1,20 @@
 import { Router } from 'express';
-import { preguntarChatbot, obtenerHistorial } from '../controllers/chatbotController';
+import { 
+  preguntarChatbot, 
+  obtenerHistorial, 
+  obtenerDocumentacion, 
+  guardarDocumentacion 
+} from '../controllers/chatbotController';
 import { verificarToken } from '../middlewares/auth';
 
 const router = Router();
 
-// Ruta para traer el historial previo del usuario
+// Rutas del Chat
 router.get('/historial', verificarToken, obtenerHistorial);
-
-// Ruta para enviar pregunta
 router.post('/preguntar', verificarToken, preguntarChatbot);
+
+// Rutas de la Documentación (¡Estas son las que faltaban!)
+router.get('/documentacion', verificarToken, obtenerDocumentacion);
+router.put('/documentacion', verificarToken, guardarDocumentacion);
 
 export default router;

@@ -540,6 +540,3 @@ Nota: Delphos está alineado con estos marcos, y la plataforma en sí está cert
 - SEVRI: Sistema Específico de Valoración del Riesgo Institucional.
 - COSO ERM: Committee of Sponsoring Organizations – Enterprise Risk Management.
 
-===============================================================================
-FIN DEL DOCUMENTO — DOCUMENTACIÓN MAESTRA DELPHOS ONBOARDING v1.0
-===============================================================================

@@ -46,7 +46,7 @@ const menuContingencia = `Mis servidores están experimentando mucha demanda en 
 Solo envía el número y te responderé al instante. 👇`;
 
 // ============================================================================
-// ENDPOINTS
+// ENDPOINTS DE CHAT
 // ============================================================================
 
 export const obtenerHistorial = async (req: Request, res: Response): Promise<void> => {
@@ -94,18 +94,12 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     const inputLimpio = pregunta.trim();
 
     // ------------------------------------------------------------------------
-    // CORTOCIRCUITO (FAST-TRACK): Si el usuario digitó un número del 1 al 14
+    // CORTOCIRCUITO (FAST-TRACK)
     // ------------------------------------------------------------------------
     if (bancoRespuestas[inputLimpio]) {
-      // 1. Guardar la pregunta (el número) del usuario
       await supabase.from('mensaje_chat').insert([{ usuario_id: usuarioId, rol: 'usuario', texto: inputLimpio }]);
-      
       const respuestaRapida = bancoRespuestas[inputLimpio];
-      
-      // 2. Guardar la respuesta predefinida
       await supabase.from('mensaje_chat').insert([{ usuario_id: usuarioId, rol: 'bot', texto: respuestaRapida }]);
-      
-      // 3. Devolver instantáneamente, sin pausas ni IA
       res.json({ respuesta: respuestaRapida });
       return;
     }
@@ -113,8 +107,6 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     // ------------------------------------------------------------------------
     // FLUJO NORMAL CON GEMINI
     // ------------------------------------------------------------------------
-    
-    // 1. Guardar la pregunta original
     const { error: errorUsuario } = await supabase.from('mensaje_chat').insert([
       { usuario_id: usuarioId, rol: 'usuario', texto: inputLimpio }
     ]);
@@ -123,10 +115,10 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
       console.error("Error al guardar mensaje del usuario:", errorUsuario);
     }
 
-    // --- PAUSA ESTRATÉGICA DE 7 SEGUNDOS ---
+    // PAUSA ESTRATÉGICA DE 7 SEGUNDOS
     await new Promise(resolve => setTimeout(resolve, 7000));
 
-    // 2. Leer el documento
+    // Leer el documento
     const rutaDocumento = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
     let conocimientoDelphos = '';
     
@@ -138,7 +130,6 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
 
     const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
-    // 3. Prompt de IA
     const promptOficial = `
       Eres el asistente de onboarding de la plataforma Delphos (un sistema GRC).
       
@@ -167,7 +158,6 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
       fs.appendFileSync(rutaNuevos, registro, 'utf-8');
     }
 
-    // 4. Guardar respuesta de la IA
     const { error: errorBot } = await supabase.from('mensaje_chat').insert([
       { usuario_id: usuarioId, rol: 'bot', texto: respuestaTexto }
     ]);
@@ -182,20 +172,58 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     console.error("Error con la IA:", error);
     const usuarioId = (req as any).user?.id;
     
-    // Si hay error de cuota o saturación, devolvemos el MENÚ DE CONTINGENCIA
     if (error.status === 429 || error.message?.includes('429') || error.status === 503 || error.message?.includes('503')) {
-      
-      // Guardamos el menú en el historial para que quede registrado
       if (usuarioId) {
         await supabase.from('mensaje_chat').insert([
           { usuario_id: usuarioId, rol: 'bot', texto: menuContingencia }
         ]);
       }
-
       res.json({ respuesta: menuContingencia });
       return;
     }
 
     res.status(500).json({ error: 'Hubo un error al procesar tu pregunta con el asistente.' });
+  }
+};
+
+// ============================================================================
+// ENDPOINTS DE DOCUMENTACIÓN IA (NUEVOS)
+// ============================================================================
+
+// Ruta exacta del archivo maestro
+const docPath = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
+
+// 1. Obtener la documentación actual (GET)
+export const obtenerDocumentacion = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!fs.existsSync(docPath)) {
+      res.status(404).json({ error: 'El archivo de documentación no existe en el servidor.' });
+      return;
+    }
+    // Leemos el .txt[cite: 1]
+    const contenido = fs.readFileSync(docPath, 'utf8');
+    res.json({ contenido });
+  } catch (error: any) {
+    console.error("Error al leer el archivo de la IA:", error);
+    res.status(500).json({ error: 'Error interno al leer el archivo de la IA.' });
+  }
+};
+
+// 2. Guardar/Sobrescribir la documentación (PUT)
+export const guardarDocumentacion = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { contenido } = req.body;
+    
+    if (!contenido) {
+      res.status(400).json({ error: 'El contenido es obligatorio.' });
+      return;
+    }
+
+    // Sobrescribimos el .txt[cite: 1]
+    fs.writeFileSync(docPath, contenido, 'utf8');
+    res.json({ mensaje: 'Documentación de IA actualizada con éxito.' });
+  } catch (error: any) {
+    console.error("Error al escribir el archivo de la IA:", error);
+    res.status(500).json({ error: 'Error interno al escribir el archivo de la IA.' });
   }
 };
