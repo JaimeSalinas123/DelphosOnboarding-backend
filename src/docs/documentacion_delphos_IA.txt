@@ -406,7 +406,7 @@ P: ¿Cuántos años de trayectoria tiene DEINSA Global Intelligence? R: Más de 
 P: ¿En cuántos continentes tiene presencia DEINSA? R: 4 continentes, con más de 500 clientes/instituciones.
 P: ¿Cuál es la misión de DEINSA/Delphos? R: Desarrollar y ofrecer soluciones de software de vanguardia que empoderen a los clientes para optimizar su gobernanza, mejorar la toma de decisiones, garantizar el cumplimiento normativo y alcanzar sus objetivos estratégicos.
 P: ¿Cuál es la visión de Delphos? R: Ser el proveedor líder en Latinoamérica de soluciones de software para Gobernanza Corporativa en los sectores público y financiero.
-P: Menciona tres valores corporativos de Delphos. R: Cualquier combinación de: Integridad, Excelencia, Innovación, Compromiso, Trabajo en Equipo, Seguridad y Responsabilidad Social.
+P: Menciona tres valores corporativos de Delphos. R: Por ejemplo, Integridad, Excelencia e Innovación (la lista completa también incluye Compromiso, Trabajo en Equipo, Seguridad y Responsabilidad Social).
 
 Nivel 2B — El modelo GRC y los pilares
 P: ¿Qué significa la sigla GRC? R: Gobierno (o Gobernanza), Riesgo y Cumplimiento.
@@ -434,15 +434,15 @@ P: ¿Qué color representa al Gobierno Corporativo? R: Rojo.
 
 Nivel 4C — Estándares y certificaciones (explicados)
 P: ¿Qué establece la norma ISO 22301? R: Los requisitos para la Gestión de la Continuidad del Negocio (BCM), base del módulo Delphos Continuum.
-P: ¿Qué ofrece la norma ISO 31000 y es certificable? R: Ofrece directrices para la gestión de riesgos; a diferencia de otras normas ISO, no es certificable, es una guía.
+P: ¿Es la norma ISO 31000 certificable, como ISO 27001? R: No. ISO 31000 son directrices para la gestión de riesgos; a diferencia de otras normas ISO, es una guía, no es certificable.
 P: ¿Qué marco ayuda a alinear la TI con los objetivos del negocio y a controlar riesgos tecnológicos? R: COBIT 2019.
-P: ¿Bajo qué certificación de seguridad de la información opera la plataforma Delphos? R: ISO/IEC 27001:2022.
+P: ¿Por qué es relevante que Delphos esté certificado bajo ISO 27001:2022? R: Porque un tercero auditó y validó que la plataforma opera con seguridad, integridad y confidencialidad, bajo la versión más reciente de esa norma.
 
 Nivel 4D — Beneficios y casos reales
-P: Menciona dos beneficios generales de implementar Delphos en una organización. R: Cualquier combinación de: decisiones más rápidas, menos riesgos y más control, equipos alineados, mejores resultados, auditorías más simples.
-P: Menciona una institución de Costa Rica que use Delphos. R: Cualquiera de: Presidencia de Costa Rica, MIDEPLAN, BCR, ICE, municipalidades como Cartago o Alajuela.
+P: Menciona dos beneficios generales de implementar Delphos en una organización. R: Por ejemplo, decisiones más rápidas y auditorías más simples (también aplican menos riesgos y más control, equipos alineados, y mejores resultados).
+P: Menciona una institución de Costa Rica que use Delphos. R: Por ejemplo, la Presidencia de Costa Rica, MIDEPLAN, el BCR o el ICE, entre otras instituciones y municipalidades como Cartago o Alajuela.
 P: ¿En qué país se implementó Delphos en el Buró de Crédito? R: México.
-P: ¿Bajo qué modelo de infraestructura en la nube opera Delphos? R: SaaS (Software como Servicio), construido sobre Oracle Cloud.
+P: ¿Qué ventajas obtiene un cliente por el modelo SaaS de Delphos? R: Acceso desde cualquier lugar, alta disponibilidad, actualizaciones automáticas y menor costo de infraestructura propia, sin necesidad de instalar servidores físicos.
 
 ===============================================================================
 ## 12. PROGRAMA DE ONBOARDING (PLAN DE KPIs)
