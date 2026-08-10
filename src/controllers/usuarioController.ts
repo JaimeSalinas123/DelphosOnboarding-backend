@@ -81,6 +81,13 @@ export const obtenerUsuarios = async (req: Request, res: Response): Promise<void
       query = query.ilike('nombre', `%${nombre}%`);
     }
 
+    // Se ordena ANTES de paginar, así "administrador" queda primero de forma
+    // real (across todas las páginas), no solo dentro de la página que ya
+    // llegó del servidor. Aprovecha que 'administrador' < 'evaluador' <
+    // 'nuevo_integrante' alfabéticamente: si algún día cambian los valores
+    // del enum de rol, esto hay que revisarlo (o pasar a un rank explícito).
+    query = query.order('rol', { ascending: true }).order('nombre', { ascending: true });
+
     const { data, error, count } = await query.range(desde, hasta);
 
     if (error) {
