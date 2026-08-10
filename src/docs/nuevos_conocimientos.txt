@@ -1,0 +1,44 @@
+=========================================
+FECHA: 7/8/2026, 10:37:58 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Cómo entro por primera vez a la plataforma Delphos con mi usuario?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:38:27 a. m.
+PREGUNTA NO DOCUMENTADA: ¿A quién le pregunto si tengo dudas técnicas durante mi onboarding?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:39:11 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Delphos tiene una API pública para desarrolladores?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:39:49 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Delphos se integra con Microsoft Teams o Slack?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:41:52 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Cuánto cuesta la licencia de Delphos?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:42:11 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Qué idiomas soporta la interfaz de Delphos?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:42:32 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Delphos ofrece un ambiente de pruebas (sandbox) antes de implementarlo en producción?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:42:52 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Cada cuánto tiempo se actualiza la plataforma Delphos?
+=========================================
+
+=========================================
+FECHA: 7/8/2026, 10:43:17 a. m.
+PREGUNTA NO DOCUMENTADA: ¿Delphos cumple con GDPR o alguna ley de protección de datos personales?
+=========================================

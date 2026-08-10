@@ -1,17 +1,58 @@
-import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import { supabase } from './config/supabase';
+
+// IMPORTACIÓN DE RUTAS
+import usuarioRoutes from './routes/usuarioRoutes';
+import estudioRoutes from './routes/estudioRoutes';
+import chatbotRoutes from './routes/chatbotRoutes';
+import satisfaccionRoutes from './routes/satisfaccionRoutes';
+import progresoRoutes from './routes/progresoRoutes';
+import auditoriaRoutes from './routes/auditoriaRoutes'; // <-- 1. IMPORTAMOS AUDITORÍA
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = 4000;
 
-app.use(cors());
+// 1. Cabeceras de seguridad Helmet
+app.use(helmet());
+
+// 2. CORS restrictivo de producción
+const allowedOrigins = ['http://localhost:3000']; 
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Petición bloqueada por políticas de seguridad de CORS'));
+    }
+  },
+  credentials: false 
+}));
+
+// Middleware para que Express entienda JSON
 app.use(express.json());
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
+// Ruta de prueba intacta
+app.get('/test-db', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase.from('usuario').select('*');
+    if (error) throw error;
+    res.json({ mensaje: '¡Conexión exitosa a Supabase, chaval!', usuarios: data });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+// APLICAMOS LAS RUTAS
+app.use('/api', usuarioRoutes);
+app.use('/api/estudio', estudioRoutes);
+app.use('/api/satisfaccion', satisfaccionRoutes);
+app.use('/api/progreso', progresoRoutes);
+app.use('/api/chat', chatbotRoutes);
+app.use('/api/auditoria', auditoriaRoutes); // <-- 2. REGISTRAMOS LA RUTA DE AUDITORÍA
+
+// Encendemos el servidor
+app.listen(port, () => {
+  console.log(`Servidor corriendo en http://localhost:${port}`);
 });
