@@ -105,7 +105,7 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     }
 
     // ------------------------------------------------------------------------
-    // FLUJO NORMAL CON GEMINI
+    // GUARDAR MENSAJE DEL USUARIO
     // ------------------------------------------------------------------------
     const { error: errorUsuario } = await supabase.from('mensaje_chat').insert([
       { usuario_id: usuarioId, rol: 'usuario', texto: inputLimpio }
@@ -115,10 +115,9 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
       console.error("Error al guardar mensaje del usuario:", errorUsuario);
     }
 
-    // PAUSA ESTRATÉGICA DE 7 SEGUNDOS
-    await new Promise(resolve => setTimeout(resolve, 7000));
-
-    // Leer el documento
+    // ------------------------------------------------------------------------
+    // PREPARAR CONOCIMIENTO Y MODELO
+    // ------------------------------------------------------------------------
     const rutaDocumento = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
     let conocimientoDelphos = '';
     
@@ -147,9 +146,53 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
       Usuario: ${inputLimpio}
     `;
 
-    const resultOficial = await model.generateContent(promptOficial);
-    let respuestaTexto = resultOficial.response.text().trim();
+    // ------------------------------------------------------------------------
+    // BUCLE DE REINTENTOS: EXPONENTIAL BACKOFF (5 INTENTOS MAX)
+    // ------------------------------------------------------------------------
+    let respuestaTexto = '';
+    let exito = false;
+    const maxIntentos = 5; // Aumentado a 5 (Punto Dulce)
+    let tiempoEspera = 2000; // Base: 2 segundos
 
+    for (let intento = 1; intento <= maxIntentos; intento++) {
+      try {
+        const resultOficial = await model.generateContent(promptOficial);
+        respuestaTexto = resultOficial.response.text().trim();
+        exito = true;
+        break; // Éxito, abortar bucle
+      } catch (error: any) {
+        const isRateLimit = error.status === 429 || error.message?.includes('429');
+        const isUnavailable = error.status === 503 || error.message?.includes('503');
+
+        if (isRateLimit || isUnavailable) {
+          console.warn(`[Gemini API] Intento ${intento} de ${maxIntentos} fallido (429/503). Reintentando en ${tiempoEspera}ms...`);
+          
+          if (intento < maxIntentos) {
+            await new Promise(resolve => setTimeout(resolve, tiempoEspera));
+            tiempoEspera *= 2; // Incrementar espera (2s -> 4s -> 8s -> 16s)
+          } else {
+            console.error(`[Gemini API] Se agotaron los ${maxIntentos} intentos de recuperación.`);
+          }
+        } else {
+          // Error crítico (ej. Auth, Sintaxis), abortar reintentos y enviar al catch global
+          console.error(`[Gemini API] Error crítico no recuperable:`, error.message);
+          throw error; 
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // MANEJO DE FALLO DEFINITIVO POR EXCESO DE TRÁFICO
+    // ------------------------------------------------------------------------
+    if (!exito) {
+      await supabase.from('mensaje_chat').insert([{ usuario_id: usuarioId, rol: 'bot', texto: menuContingencia }]);
+      res.json({ respuesta: menuContingencia });
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // FLUJO 'FALTA_DOC' Y NUEVOS CONOCIMIENTOS
+    // ------------------------------------------------------------------------
     if (respuestaTexto.includes('FALTA_DOC')) {
       respuestaTexto = "Lo siento, no tengo información sobre ese tema en mi base de conocimiento oficial de Onboarding. ¿Te puedo ayudar con alguna otra duda sobre la plataforma Delphos?";
       
@@ -169,20 +212,17 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     res.json({ respuesta: respuestaTexto });
 
   } catch (error: any) {
-    console.error("Error con la IA:", error);
-    const usuarioId = (req as any).user?.id;
+    console.error("Error fatal en el flujo de IA:", error);
     
-    if (error.status === 429 || error.message?.includes('429') || error.status === 503 || error.message?.includes('503')) {
-      if (usuarioId) {
-        await supabase.from('mensaje_chat').insert([
-          { usuario_id: usuarioId, rol: 'bot', texto: menuContingencia }
-        ]);
-      }
-      res.json({ respuesta: menuContingencia });
-      return;
+    // Fallback de seguridad extrema si cae en el catch global
+    const usuarioId = (req as any).user?.id;
+    if (usuarioId) {
+      await supabase.from('mensaje_chat').insert([
+        { usuario_id: usuarioId, rol: 'bot', texto: menuContingencia }
+      ]);
     }
-
-    res.status(500).json({ error: 'Hubo un error al procesar tu pregunta con el asistente.' });
+    
+    res.json({ respuesta: menuContingencia });
   }
 };
 
@@ -190,10 +230,8 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
 // ENDPOINTS DE DOCUMENTACIÓN IA
 // ============================================================================
 
-// Ruta exacta del archivo maestro
 const docPath = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
 
-// 1. Obtener la documentación actual (GET)
 export const obtenerDocumentacion = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!fs.existsSync(docPath)) {
@@ -208,7 +246,6 @@ export const obtenerDocumentacion = async (req: Request, res: Response): Promise
   }
 };
 
-// 2. Guardar/Sobrescribir la documentación (PUT)
 export const guardarDocumentacion = async (req: Request, res: Response): Promise<void> => {
   try {
     const { contenido } = req.body;
@@ -232,7 +269,6 @@ export const guardarDocumentacion = async (req: Request, res: Response): Promise
 
 const nuevosConocimientosPath = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
 
-// 1. Obtener los nuevos conocimientos (GET)
 export const obtenerNuevosConocimientos = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!fs.existsSync(nuevosConocimientosPath)) {
@@ -247,7 +283,6 @@ export const obtenerNuevosConocimientos = async (req: Request, res: Response): P
   }
 };
 
-// 2. Guardar/Sobrescribir los nuevos conocimientos (POST)
 export const guardarNuevosConocimientos = async (req: Request, res: Response): Promise<void> => {
   try {
     const { contenido } = req.body;
