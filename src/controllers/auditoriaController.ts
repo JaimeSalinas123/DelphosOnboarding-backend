@@ -67,7 +67,7 @@ export const rehacerAuditoria = async (req: Request, res: Response): Promise<voi
     let detalleReversion = '';
 
     // =========================================================
-    // LÓGICA DE RESTAURACIÓN (BASE DE DATOS VS ARCHIVOS TXT)
+    // LÓGICA DE RESTAURACIÓN SEGÚN EL MÓDULO
     // =========================================================
     if (registro.modulo === 'estudio') {
       const { error } = await supabase.from('preguntas_estudio').update({ activo: true }).eq('id', registro.datos_originales.id);
@@ -80,16 +80,24 @@ export const rehacerAuditoria = async (req: Request, res: Response): Promise<voi
       detalleReversion = `[Restauración] Reactivó la pregunta de encuesta: "${registro.datos_originales.pregunta}"`;
 
     } else if (registro.modulo === 'documentacion') {
-      // AQUÍ RESTAURAMOS EL ARCHIVO TXT FÍSICO
       const docPath = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
       fs.writeFileSync(docPath, registro.datos_originales.texto_anterior, 'utf8');
       detalleReversion = `[Restauración] Reestableció el archivo de Documentación IA a su estado anterior.`;
 
     } else if (registro.modulo === 'nuevos_conocimientos') {
-      // AQUÍ RESTAURAMOS EL ARCHIVO TXT FÍSICO
       const conocimientosPath = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
       fs.writeFileSync(conocimientosPath, registro.datos_originales.texto_anterior, 'utf8');
       detalleReversion = `[Restauración] Reestableció el archivo de Nuevos Conocimientos a su estado anterior.`;
+
+    } else if (registro.modulo === 'usuarios') {
+      // AQUÍ RESTAURAMOS EL ROL DEL USUARIO
+      const { error } = await supabase
+        .from('usuario')
+        .update({ rol: registro.datos_originales.rol_anterior }) // Le ponemos el rol viejo
+        .eq('id', registro.datos_originales.id);
+      
+      errorRestauracion = error;
+      detalleReversion = `[Restauración] Revirtió el rol de "${registro.datos_originales.nombre}" a ${registro.datos_originales.rol_anterior.replace('_', ' ')}`;
 
     } else {
       res.status(400).json({ error: 'Este módulo no soporta restauración de datos en este momento' });
@@ -108,7 +116,7 @@ export const rehacerAuditoria = async (req: Request, res: Response): Promise<voi
         usuario_nombre: usuario.nombre || 'Administrador',
         usuario_email: usuario.email || 'No disponible',
         modulo: registro.modulo,
-        accion: 'crear',
+        accion: 'crear', // Lo guardamos como 'crear' o 'editar' para indicar la restauración
         detalles: detalleReversion,
         reversible: false
       });

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
+import { registrarAuditoria } from '../utils/auditoriaHelper'; // <-- IMPORTAMOS EL HELPER
 
 // Registro de nuevos usuarios
 export const registrarUsuario = async (req: Request, res: Response): Promise<void> => {
@@ -7,17 +8,15 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
 
   try {
     // 1. Detección de Bot (Honeypot):
-    // Si el campo invisible contiene texto, fingimos un registro exitoso (estatus 201)
-    // pero no tocamos la base de datos para no gastar ancho de banda o almacenamiento.
     if (empresa_web) {
       res.status(201).json({ 
         mensaje: '¡Usuario registrado con éxito en Delphos Onboarding!', 
-        usuarioId: 'ae201c19-76e6-4956-b58f-35ed042da101' // ID ficticio para el bot
+        usuarioId: 'ae201c19-76e6-4956-b58f-35ed042da101' 
       });
       return;
     }
 
-    // 2. Registramos en Auth de Supabase (Bóveda oculta)
+    // 2. Registramos en Auth de Supabase
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email,
       password: password,
@@ -41,7 +40,6 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
       ]);
 
       if (dbError) {
-         // Manejo limpio si se evade Zod y choca con el candado UNIQUE de la base de datos
          if (dbError.code === '23505') {
            res.status(400).json({ error: 'La dirección de correo ya se encuentra registrada.' });
            return;
@@ -61,7 +59,7 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// Obtener todos los usuarios registrados (admite filtro por departamento, búsqueda por nombre y paginación)
+// Obtener todos los usuarios registrados
 export const obtenerUsuarios = async (req: Request, res: Response): Promise<void> => {
   const { departamento, nombre } = req.query;
 
@@ -80,7 +78,6 @@ export const obtenerUsuarios = async (req: Request, res: Response): Promise<void
     }
 
     if (nombre && typeof nombre === 'string') {
-      // ilike hace la búsqueda insensible a mayúsculas/minúsculas y parcial (contiene el texto)
       query = query.ilike('nombre', `%${nombre}%`);
     }
 
@@ -111,6 +108,16 @@ export const actualizarRolUsuario = async (req: Request, res: Response): Promise
   const { rol } = req.body;
 
   try {
+    // 1. OBTENEMOS EL ROL VIEJO ANTES DE CAMBIARLO (Para poder revertirlo después)
+    const { data: usuarioViejo, error: errorBusqueda } = await supabase
+      .from('usuario')
+      .select('nombre, rol')
+      .eq('id', id)
+      .single();
+
+    if (errorBusqueda) throw errorBusqueda;
+
+    // 2. ACTUALIZAMOS AL NUEVO ROL
     const { data, error } = await supabase
       .from('usuario')
       .update({ rol })
@@ -128,6 +135,20 @@ export const actualizarRolUsuario = async (req: Request, res: Response): Promise
       return;
     }
 
+    // 3. REGISTRAMOS EN LA AUDITORÍA (Guardamos el rol viejo en datos_originales)
+    const admin = (req as any).user;
+    if (admin) {
+      await registrarAuditoria({
+        usuario_nombre: admin.nombre || 'Administrador',
+        usuario_email: admin.email || 'No disponible',
+        modulo: 'usuarios',
+        accion: 'editar',
+        detalles: `Cambió el rol de "${data.nombre}" a ${rol.replace('_', ' ')}`,
+        reversible: true,
+        datos_originales: { id: data.id, nombre: data.nombre, rol_anterior: usuarioViejo.rol }
+      });
+    }
+
     res.status(200).json({
       mensaje: 'Rol actualizado correctamente.',
       usuario: data
@@ -142,7 +163,6 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
   const { email, password } = req.body;
 
   try {
-    // 1. Autenticamos con Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -153,10 +173,9 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
        return;
     }
 
-    // 2. Traemos los datos extra del perfil
     const { data: perfilData } = await supabase
       .from('usuario')
-      .select('id, nombre, departamento, rol') // <--- ¡AQUÍ ESTÁ EL CAMBIO!
+      .select('id, nombre, departamento, rol')
       .eq('id', data.user.id)
       .single();
 
@@ -171,15 +190,13 @@ export const loginUsuario = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-// --- NUEVAS FUNCIONES DE RECUPERACIÓN DE CONTRASEÑA ---
+// --- FUNCIONES DE RECUPERACIÓN DE CONTRASEÑA ---
 
-// Solicitar recuperación de contraseña
 export const solicitarRecuperacion = async (req: Request, res: Response): Promise<void> => {
   const { email } = req.body;
 
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Esta es la URL a la que Supabase mandará al usuario cuando haga clic en el correo
       redirectTo: 'http://localhost:3000/resetear-password',
     });
 
@@ -196,12 +213,10 @@ export const solicitarRecuperacion = async (req: Request, res: Response): Promis
   }
 };
 
-// Ejecutar el reseteo de la contraseña con el token seguro
 export const resetearPassword = async (req: Request, res: Response): Promise<void> => {
   const { access_token, refresh_token, new_password } = req.body;
 
   try {
-    // 1. Le decimos a Supabase quién está haciendo la petición usando los tokens del correo
     const { error: sessionError } = await supabase.auth.setSession({
       access_token,
       refresh_token
@@ -212,7 +227,6 @@ export const resetearPassword = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    // 2. Si los tokens son válidos, actualizamos la contraseña
     const { error: updateError } = await supabase.auth.updateUser({
       password: new_password
     });
