@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
+import { registrarAuditoria } from '../utils/auditoriaHelper';
 
-// 1. Obtener todas las preguntas (Solo las activas), en el orden en que se muestran en la encuesta
+// 1. Obtener todas las preguntas
 export const obtenerPreguntas = async (req: Request, res: Response): Promise<void> => {
   try {
     const { data, error } = await supabase
       .from('preguntas_satisfaccion')
       .select('*')
-      .eq('activo', true) // Filtro del borrado lógico
+      .eq('activo', true)
       .order('orden', { ascending: true });
 
     if (error) throw error;
@@ -27,6 +28,20 @@ export const crearPregunta = async (req: Request, res: Response): Promise<void> 
       .single();
 
     if (error) throw error;
+
+    // REGISTRO DE AUDITORÍA
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'encuestas',
+        accion: 'crear',
+        detalles: `Añadió la pregunta de encuesta: "${data.pregunta}"`,
+        reversible: false
+      });
+    }
+
     res.status(201).json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -45,6 +60,20 @@ export const actualizarPregunta = async (req: Request, res: Response): Promise<v
       .single();
 
     if (error) throw error;
+
+    // REGISTRO DE AUDITORÍA
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'encuestas',
+        accion: 'editar',
+        detalles: `Editó la pregunta de encuesta: "${data.pregunta}"`,
+        reversible: false
+      });
+    }
+
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -55,25 +84,52 @@ export const actualizarPregunta = async (req: Request, res: Response): Promise<v
 export const eliminarPregunta = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+
+    // A. Capturar datos originales
+    const { data: preguntaOriginal, error: errorBusqueda } = await supabase
+      .from('preguntas_satisfaccion')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (errorBusqueda) throw errorBusqueda;
+
+    // B. Borrado lógico
     const { error } = await supabase
       .from('preguntas_satisfaccion')
-      .update({ activo: false }) // Solo la ocultamos
+      .update({ activo: false })
       .eq('id', id);
 
     if (error) throw error;
+
+    // C. REGISTRO DE AUDITORÍA REVERSIBLE
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'encuestas',
+        accion: 'eliminar',
+        detalles: `Eliminó la pregunta de encuesta: "${preguntaOriginal.pregunta}"`,
+        reversible: true,
+        datos_originales: preguntaOriginal
+      });
+    }
+
     res.json({ mensaje: 'Pregunta eliminada del sistema correctamente' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// 5. Envío de la encuesta de satisfacción por parte del pasante (una sola vez por usuario)
+// ... MANTENEMOS TUS DEMÁS FUNCIONES EXACTAMENTE IGUAL ...
+// (enviarEncuesta, obtenerResultados, obtenerMiEstado, obtenerCodigoEncuesta, actualizarCodigoEncuesta, verificarCodigoEncuesta)
+
 export const enviarEncuesta = async (req: Request, res: Response): Promise<void> => {
   const usuarioId = (req as any).user.id;
   const { respuestas } = req.body;
 
   try {
-    // 1. Un usuario solo puede completar la encuesta una vez
     const { data: encuestaExistente, error: errorConsulta } = await supabase
       .from('encuestas_satisfaccion')
       .select('id')
@@ -87,7 +143,6 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // 2. Creamos la encuesta ligada al usuario autenticado
     const { data: encuesta, error: errorEncuesta } = await supabase
       .from('encuestas_satisfaccion')
       .insert([{ usuario_id: usuarioId, estado: 'completada' }])
@@ -96,7 +151,6 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
 
     if (errorEncuesta) throw errorEncuesta;
 
-    // 3. Guardamos cada respuesta ligada a esa encuesta
     const filasRespuestas = respuestas.map((r: any) => ({
       encuesta_id: encuesta.id,
       pregunta_id: r.pregunta_id,
@@ -109,7 +163,6 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
       .insert(filasRespuestas);
 
     if (errorRespuestas) {
-      // Sin las respuestas la encuesta queda inconsistente: la revertimos
       await supabase.from('encuestas_satisfaccion').delete().eq('id', encuesta.id);
       throw errorRespuestas;
     }
@@ -123,8 +176,6 @@ export const enviarEncuesta = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// 6. Listar las respuestas de todos los usuarios que completaron la encuesta (solo administradores, con
-// paginación, filtro opcional por departamento y por rango de fecha de finalización)
 export const obtenerResultados = async (req: Request, res: Response): Promise<void> => {
   const pagina = Math.max(parseInt(req.query.pagina as string) || 1, 1);
   const limite = Math.min(Math.max(parseInt(req.query.limite as string) || 10, 1), 100);
@@ -134,8 +185,6 @@ export const obtenerResultados = async (req: Request, res: Response): Promise<vo
   const { departamento, fechaDesde, fechaHasta } = req.query;
 
   try {
-    // !inner en usuario: sin esto, .eq('usuario.departamento', ...) filtraría
-    // el objeto embebido pero no las filas de encuestas_satisfaccion en sí.
     let query = supabase
       .from('encuestas_satisfaccion')
       .select(`
@@ -159,7 +208,6 @@ export const obtenerResultados = async (req: Request, res: Response): Promise<vo
       query = query.gte('fecha_completado', fechaDesde);
     }
     if (fechaHasta && typeof fechaHasta === 'string') {
-      // fechaHasta llega como YYYY-MM-DD (input type=date): incluimos el día completo.
       query = query.lte('fecha_completado', `${fechaHasta}T23:59:59.999`);
     }
 
@@ -183,8 +231,6 @@ export const obtenerResultados = async (req: Request, res: Response): Promise<vo
   }
 };
 
-// 7. El pasante consulta si ya completó la encuesta, para que el front no lo
-// deje ni empezarla de nuevo (en vez de descubrirlo recién al enviar).
 export const obtenerMiEstado = async (req: Request, res: Response): Promise<void> => {
   const usuarioId = (req as any).user.id;
 
@@ -202,7 +248,6 @@ export const obtenerMiEstado = async (req: Request, res: Response): Promise<void
   }
 };
 
-// 8. Consultar el código de acceso vigente (solo administradores, panel de configuración)
 export const obtenerCodigoEncuesta = async (req: Request, res: Response): Promise<void> => {
   try {
     const { data, error } = await supabase
@@ -218,7 +263,6 @@ export const obtenerCodigoEncuesta = async (req: Request, res: Response): Promis
   }
 };
 
-// 9. Actualizar el código de acceso (solo administradores)
 export const actualizarCodigoEncuesta = async (req: Request, res: Response): Promise<void> => {
   const { codigo } = req.body;
 
@@ -231,14 +275,26 @@ export const actualizarCodigoEncuesta = async (req: Request, res: Response): Pro
       .single();
 
     if (error) throw error;
+
+    // REGISTRO DE AUDITORÍA
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'encuestas',
+        accion: 'editar',
+        detalles: `Actualizó el código secreto de la encuesta.`,
+        reversible: false
+      });
+    }
+
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// 10. El pasante intenta desbloquear la encuesta con un código (comparación
-// insensible a mayúsculas/espacios, para no generar fricción de más).
 export const verificarCodigoEncuesta = async (req: Request, res: Response): Promise<void> => {
   const { codigo } = req.body;
 
