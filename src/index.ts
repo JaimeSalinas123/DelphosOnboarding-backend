@@ -9,31 +9,38 @@ import estudioRoutes from './routes/estudioRoutes';
 import chatbotRoutes from './routes/chatbotRoutes';
 import satisfaccionRoutes from './routes/satisfaccionRoutes';
 import progresoRoutes from './routes/progresoRoutes';
-import auditoriaRoutes from './routes/auditoriaRoutes'; // <-- 1. IMPORTAMOS AUDITORÍA
+import auditoriaRoutes from './routes/auditoriaRoutes';
 
 const app = express();
-const port = 4000;
+
+// 1. PUERTO DINÁMICO PARA RENDER (¡Soluciona que el servidor cobre vida en la nube!)
+const port = process.env.PORT || 4000;
 
 // 1. Cabeceras de seguridad Helmet
 app.use(helmet());
 
-// 2. CORS restrictivo de producción
-const allowedOrigins = ['http://localhost:3000']; 
+// 2. CORS ABIERTO A TU VERCEL Y LOCALHOST (Permite que el frontend hable con el backend)
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://delphos-app-one.vercel.app' // <-- Tu URL real de Vercel
+]; 
+
 app.use(cors({
   origin: (origin, callback) => {
+    // Permitir solicitudes sin origen (como Postman o apps móviles) o si están en la lista
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Petición bloqueada por políticas de seguridad de CORS'));
     }
   },
-  credentials: false 
+  credentials: true 
 }));
 
 // Middleware para que Express entienda JSON
 app.use(express.json());
 
-// Ruta de prueba intacta
+// Ruta de prueba
 app.get('/test-db', async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase.from('usuario').select('*');
@@ -44,15 +51,15 @@ app.get('/test-db', async (req: Request, res: Response) => {
   }
 });
 
-// APLICAMOS LAS RUTAS
+// APLICAMOS LAS RUTAS (Todas conservan su prefijo /api tal como las diseñaste)
 app.use('/api', usuarioRoutes);
 app.use('/api/estudio', estudioRoutes);
 app.use('/api/satisfaccion', satisfaccionRoutes);
 app.use('/api/progreso', progresoRoutes);
 app.use('/api/chat', chatbotRoutes);
-app.use('/api/auditoria', auditoriaRoutes); // <-- 2. REGISTRAMOS LA RUTA DE AUDITORÍA
+app.use('/api/auditoria', auditoriaRoutes);
 
-// Encendemos el servidor
-app.listen(port, () => {
-  console.log(`Servidor corriendo en http://localhost:${port}`);
+// Encendemos el servidor con el puerto correcto
+app.listen(Number(port), '0.0.0.0', () => {
+  console.log(`Servidor corriendo en el puerto ${port}`);
 });
