@@ -4,6 +4,8 @@ Propósito: Base de conocimiento exclusiva para el asistente virtual de la plata
 Idioma: Español
 Nota de uso para la IA: Este documento es la fuente de verdad. Responde SOLO con la información aquí contenida. Si algo no está en este documento, indícalo en lugar de inventar.
 
+
+
 ===============================================================================
 ## 1. INFORMACIÓN GENERAL
 ===============================================================================

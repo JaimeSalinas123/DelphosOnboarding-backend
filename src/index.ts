@@ -2,11 +2,14 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { supabase } from './config/supabase';
+
+// IMPORTACIÓN DE RUTAS
 import usuarioRoutes from './routes/usuarioRoutes';
 import estudioRoutes from './routes/estudioRoutes';
 import chatbotRoutes from './routes/chatbotRoutes';
 import satisfaccionRoutes from './routes/satisfaccionRoutes';
 import progresoRoutes from './routes/progresoRoutes';
+import auditoriaRoutes from './routes/auditoriaRoutes'; // <-- 1. IMPORTAMOS AUDITORÍA
 
 const app = express();
 const port = 4000;
@@ -30,7 +33,7 @@ app.use(cors({
 // Middleware para que Express entienda JSON
 app.use(express.json());
 
-// Dejamos tu ruta de prueba intacta
+// Ruta de prueba intacta
 app.get('/test-db', async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase.from('usuario').select('*');
@@ -47,6 +50,7 @@ app.use('/api/estudio', estudioRoutes);
 app.use('/api/satisfaccion', satisfaccionRoutes);
 app.use('/api/progreso', progresoRoutes);
 app.use('/api/chat', chatbotRoutes);
+app.use('/api/auditoria', auditoriaRoutes); // <-- 2. REGISTRAMOS LA RUTA DE AUDITORÍA
 
 // Encendemos el servidor
 app.listen(port, () => {

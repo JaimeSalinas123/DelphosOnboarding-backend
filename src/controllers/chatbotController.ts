@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 import { supabase } from '../config/supabase';
+import { registrarAuditoria } from '../utils/auditoriaHelper';
 
 const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
 
@@ -227,7 +228,7 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
 };
 
 // ============================================================================
-// ENDPOINTS DE DOCUMENTACIÓN IA
+// ENDPOINTS DE DOCUMENTACIÓN IA (AHORA CON AUDITORÍA)
 // ============================================================================
 
 const docPath = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
@@ -250,12 +251,31 @@ export const guardarDocumentacion = async (req: Request, res: Response): Promise
   try {
     const { contenido } = req.body;
     
-    if (!contenido) {
+    if (contenido === undefined) {
       res.status(400).json({ error: 'El contenido es obligatorio.' });
       return;
     }
 
+    // 1. ANTES de sobrescribir, leemos el archivo actual para guardarlo en la base de datos
+    const textoAnterior = fs.existsSync(docPath) ? fs.readFileSync(docPath, 'utf8') : '';
+
+    // 2. Sobrescribimos el archivo físico
     fs.writeFileSync(docPath, contenido, 'utf8');
+
+    // 3. Dejamos huella en la Auditoría (Esto permite "Rehacer" enviando el texto_anterior)
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || '',
+        modulo: 'documentacion',
+        accion: 'editar',
+        detalles: `Editó el archivo maestro de Documentación IA.`,
+        reversible: true,
+        datos_originales: { texto_anterior: textoAnterior, id: 'doc_maestra' } 
+      });
+    }
+
     res.json({ mensaje: 'Documentación de IA actualizada con éxito.' });
   } catch (error: any) {
     console.error("Error al escribir el archivo de la IA:", error);
@@ -264,7 +284,7 @@ export const guardarDocumentacion = async (req: Request, res: Response): Promise
 };
 
 // ============================================================================
-// ENDPOINTS DE NUEVOS CONOCIMIENTOS (IA)
+// ENDPOINTS DE NUEVOS CONOCIMIENTOS (AHORA CON AUDITORÍA)
 // ============================================================================
 
 const nuevosConocimientosPath = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
@@ -287,7 +307,31 @@ export const guardarNuevosConocimientos = async (req: Request, res: Response): P
   try {
     const { contenido } = req.body;
     
-    fs.writeFileSync(nuevosConocimientosPath, contenido || '', 'utf8');
+    if (contenido === undefined) {
+      res.status(400).json({ error: 'El contenido es obligatorio.' });
+      return;
+    }
+
+    // 1. CAPTURAR EL TEXTO ANTERIOR
+    const textoAnterior = fs.existsSync(nuevosConocimientosPath) ? fs.readFileSync(nuevosConocimientosPath, 'utf8') : '';
+    
+    // 2. ESCRIBIR EL NUEVO
+    fs.writeFileSync(nuevosConocimientosPath, contenido, 'utf8');
+
+    // 3. GUARDAR AUDITORÍA
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || '',
+        modulo: 'nuevos_conocimientos',
+        accion: 'editar', 
+        detalles: `Modificó/Eliminó registros en el archivo de Nuevos Conocimientos.`,
+        reversible: true,
+        datos_originales: { texto_anterior: textoAnterior, id: 'nuevos_conocimientos' } 
+      });
+    }
+
     res.json({ mensaje: 'Nuevos conocimientos actualizados con éxito.' });
   } catch (error: any) {
     console.error("Error al escribir el archivo de nuevos conocimientos:", error);

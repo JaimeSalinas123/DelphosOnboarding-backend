@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
+import { registrarAuditoria } from '../utils/auditoriaHelper';
 
 // 1. Obtener todas las preguntas (Solo las activas)
 export const obtenerPreguntas = async (req: Request, res: Response): Promise<void> => {
@@ -27,6 +28,20 @@ export const crearPregunta = async (req: Request, res: Response): Promise<void> 
       .single();
 
     if (error) throw error;
+
+    // REGISTRO DE AUDITORÍA
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'estudio',
+        accion: 'crear',
+        detalles: `Creó la pregunta: "${data.pregunta}"`,
+        reversible: false
+      });
+    }
+
     res.status(201).json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -45,6 +60,20 @@ export const actualizarPregunta = async (req: Request, res: Response): Promise<v
       .single();
 
     if (error) throw error;
+
+    // REGISTRO DE AUDITORÍA
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'estudio',
+        accion: 'editar',
+        detalles: `Editó la pregunta: "${data.pregunta}"`,
+        reversible: false
+      });
+    }
+
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -55,12 +84,38 @@ export const actualizarPregunta = async (req: Request, res: Response): Promise<v
 export const eliminarPregunta = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+
+    // A. Obtener la data ANTES de borrar para guardarla en la auditoría
+    const { data: preguntaOriginal, error: errorBusqueda } = await supabase
+      .from('preguntas_estudio')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (errorBusqueda) throw errorBusqueda;
+
+    // B. Ejecutar el borrado lógico
     const { error } = await supabase
       .from('preguntas_estudio')
       .update({ activo: false }) // Solo la ocultamos
       .eq('id', id);
 
     if (error) throw error;
+
+    // C. REGISTRO DE AUDITORÍA (Este SÍ es reversible)
+    const usuario = (req as any).user;
+    if (usuario) {
+      await registrarAuditoria({
+        usuario_nombre: usuario.nombre || 'Administrador',
+        usuario_email: usuario.email || 'No disponible',
+        modulo: 'estudio',
+        accion: 'eliminar',
+        detalles: `Eliminó la pregunta: "${preguntaOriginal.pregunta}"`,
+        reversible: true,
+        datos_originales: preguntaOriginal // Guardamos el JSON completo para poder restaurarlo
+      });
+    }
+
     res.json({ mensaje: 'Pregunta eliminada del sistema correctamente' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -68,10 +123,9 @@ export const eliminarPregunta = async (req: Request, res: Response): Promise<voi
 };
 
 // ==========================================
-// NUEVO: CONTROLADORES DE RESULTADOS
+// CONTROLADORES DE RESULTADOS
 // ==========================================
 
-// 5. Guardar resultado de un usuario
 export const guardarResultado = async (req: Request, res: Response): Promise<void> => {
   try {
     const { data, error } = await supabase
@@ -87,10 +141,8 @@ export const guardarResultado = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// 6. Obtener resultados para el panel de administración
 export const obtenerResultados = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Hacemos un JOIN con la tabla usuario para traer el nombre, email y departamento
     const { data, error } = await supabase
       .from('resultados_estudio')
       .select(`
