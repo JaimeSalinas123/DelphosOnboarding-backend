@@ -117,9 +117,10 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     }
 
     // ------------------------------------------------------------------------
-    // PREPARAR CONOCIMIENTO Y MODELO
+    // PREPARAR CONOCIMIENTO Y MODELO (CORRECCIÓN DE RUTA)
     // ------------------------------------------------------------------------
-    const rutaDocumento = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
+    // Utilizamos process.cwd() para buscar siempre desde la raíz del proyecto
+    const rutaDocumento = path.join(process.cwd(), 'src/docs/documentacion_delphos_IA.txt');
     let conocimientoDelphos = '';
     
     if (fs.existsSync(rutaDocumento)) {
@@ -192,12 +193,12 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
     }
 
     // ------------------------------------------------------------------------
-    // FLUJO 'FALTA_DOC' Y NUEVOS CONOCIMIENTOS
+    // FLUJO 'FALTA_DOC' Y NUEVOS CONOCIMIENTOS (CORRECCIÓN DE RUTA)
     // ------------------------------------------------------------------------
     if (respuestaTexto.includes('FALTA_DOC')) {
       respuestaTexto = "Lo siento, no tengo información sobre ese tema en mi base de conocimiento oficial de Onboarding. ¿Te puedo ayudar con alguna otra duda sobre la plataforma Delphos?";
       
-      const rutaNuevos = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
+      const rutaNuevos = path.join(process.cwd(), 'src/docs/nuevos_conocimientos.txt');
       const registro = `\n===============================================================================\n## ${inputLimpio}\n===============================================================================\nFecha de captura: ${new Date().toLocaleString('es-SV')}\n\n`;
       fs.appendFileSync(rutaNuevos, registro, 'utf-8');
     }
@@ -228,10 +229,10 @@ export const preguntarChatbot = async (req: Request, res: Response): Promise<voi
 };
 
 // ============================================================================
-// ENDPOINTS DE DOCUMENTACIÓN IA (AHORA CON AUDITORÍA)
+// ENDPOINTS DE DOCUMENTACIÓN IA (CORRECCIÓN DE RUTA)
 // ============================================================================
 
-const docPath = path.join(__dirname, '../docs/documentacion_delphos_IA.txt');
+const docPath = path.join(process.cwd(), 'src/docs/documentacion_delphos_IA.txt');
 
 export const obtenerDocumentacion = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -284,10 +285,10 @@ export const guardarDocumentacion = async (req: Request, res: Response): Promise
 };
 
 // ============================================================================
-// ENDPOINTS DE NUEVOS CONOCIMIENTOS (AHORA CON AUDITORÍA)
+// ENDPOINTS DE NUEVOS CONOCIMIENTOS (CORRECCIÓN DE RUTA)
 // ============================================================================
 
-const nuevosConocimientosPath = path.join(__dirname, '../docs/nuevos_conocimientos.txt');
+const nuevosConocimientosPath = path.join(process.cwd(), 'src/docs/nuevos_conocimientos.txt');
 
 export const obtenerNuevosConocimientos = async (req: Request, res: Response): Promise<void> => {
   try {
