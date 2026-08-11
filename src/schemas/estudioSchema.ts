@@ -13,11 +13,11 @@ export const preguntaSchema = z.object({
 });
 
 export const resultadoSchema = z.object({
-  usuario_id: z.string({ message: 'El ID de usuario es obligatorio' }).uuid('ID de usuario inválido'),
+  // Eliminamos usuario_id porque el controlador lo extrae directamente del token por seguridad
   metodo: z.enum(['cuestionario', 'flashcard', 'verdadero_falso'], { 
     message: 'Método de estudio inválido' 
   }),
   puntuacion: z.number().optional().nullable(),
   total_preguntas: z.number().optional().nullable(),
-  respuestas_detalle: z.array(z.any()).optional().nullable(), // <-- ESTA ES LA LÍNEA MÁGICA
+  respuestas_detalle: z.array(z.any()).optional().nullable(), 
 });
