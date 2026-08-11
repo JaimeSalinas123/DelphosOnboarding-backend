@@ -128,9 +128,18 @@ export const eliminarPregunta = async (req: Request, res: Response): Promise<voi
 
 export const guardarResultado = async (req: Request, res: Response): Promise<void> => {
   try {
+    // 1. Extraemos el ID del usuario directamente del token inyectado
+    const usuarioId = (req as any).user.id;
+
+    // 2. Combinamos el ID seguro con las respuestas que envía el frontend
+    const datosAGuardar = {
+      ...req.body,
+      usuario_id: usuarioId
+    };
+
     const { data, error } = await supabase
       .from('resultados_estudio')
-      .insert([req.body])
+      .insert([datosAGuardar])
       .select()
       .single();
 
