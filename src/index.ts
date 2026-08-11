@@ -21,8 +21,8 @@ app.use(helmet());
 
 // 2. CORS ABIERTO A TU VERCEL Y LOCALHOST (Permite que el frontend hable con el backend)
 const allowedOrigins = [
-  'http://localhost:3000',
-  'https://delphos-app-one.vercel.app' // <-- Tu URL real de Vercel
+  'http://localhost:4000',
+  'https://delphos-app-rho.vercel.app' // <-- Tu URL real de Vercel
 ]; 
 
 app.use(cors({
