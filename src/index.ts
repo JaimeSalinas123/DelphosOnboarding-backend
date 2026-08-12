@@ -21,16 +21,19 @@ app.use(helmet());
 
 // 2. CORS ABIERTO A TU VERCEL Y LOCALHOST (Permite que el frontend hable con el backend)
 const allowedOrigins = [
-  'http://localhost:4000',
+  'http://localhost:3000', // <-- ¡CORREGIDO! Es el puerto 3000 de tu frontend de Next.js
+  'http://127.0.0.1:3000', // <-- Para pruebas locales en tu máquina
+  'http://192.168.1.26:3000', // <-- Para pruebas en tu red local (ej. celular)
   'https://delphos-app-rho.vercel.app' // <-- Tu URL real de Vercel
 ]; 
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir solicitudes sin origen (como Postman o apps móviles) o si están en la lista
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Permitir solicitudes sin origen (como Postman o apps móviles) o si están en la lista VIP
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`[CORS BLOQUEADO] Intento de acceso desde: ${origin}`);
       callback(new Error('Petición bloqueada por políticas de seguridad de CORS'));
     }
   },
