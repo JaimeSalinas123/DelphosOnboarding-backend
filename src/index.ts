@@ -23,7 +23,8 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000', // <-- ¡CORREGIDO! Es el puerto 3000 de tu frontend de Next.js
   'http://127.0.0.1:3000', // <-- Para pruebas locales en tu máquina
-  'http://192.168.1.26:3000', // <-- Para pruebas en tu red local (ej. celular)
+  'http://192.168.1.26:3000',
+  'http://10.5.0.2:3000', // <-- Para pruebas en tu red local (ej. celular)
   'https://delphos-app-rho.vercel.app' // <-- Tu URL real de Vercel
 ]; 
 
