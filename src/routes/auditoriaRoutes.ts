@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import { obtenerAuditoria, rehacerAuditoria } from '../controllers/auditoriaController';
-import { verificarToken } from '../middlewares/auth'; // Asegúrate de que la ruta del middleware sea correcta
+// 🛡️ CORRECCIÓN: Importamos verificarAdmin
+import { verificarToken, verificarAdmin } from '../middlewares/auth'; 
 
 const router = Router();
 
 // Endpoint para listar el registro (GET /api/auditoria)
-router.get('/', verificarToken, obtenerAuditoria);
+// 🛡️ CORRECCIÓN P0: Agregamos verificarAdmin para evitar escalación de privilegios
+router.get('/', verificarToken, verificarAdmin, obtenerAuditoria);
 
 // Endpoint para botón rehacer (POST /api/auditoria/:id/rehacer)
-router.post('/:id/rehacer', verificarToken, rehacerAuditoria);
+// 🛡️ CORRECCIÓN P0: Agregamos verificarAdmin
+router.post('/:id/rehacer', verificarToken, verificarAdmin, rehacerAuditoria);
 
 export default router;
