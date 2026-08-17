@@ -13,24 +13,27 @@ import auditoriaRoutes from './routes/auditoriaRoutes';
 
 const app = express();
 
-// 1. PUERTO DINÁMICO PARA RENDER (¡Soluciona que el servidor cobre vida en la nube!)
+// PUERTO DINÁMICO PARA RENDER
 const port = process.env.PORT || 4000;
 
-// 1. Cabeceras de seguridad Helmet
+// Cabeceras de seguridad Helmet
 app.use(helmet());
 
-// 2. CORS ABIERTO A TU VERCEL Y LOCALHOST (Permite que el frontend hable con el backend)
+// CORS ABIERTO A TU VERCEL Y LOCALHOST
 const allowedOrigins = [
-  'http://localhost:4000',
-  'https://delphos-app-rho.vercel.app' // <-- Tu URL real de Vercel
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://192.168.1.26:3000',
+  'http://10.5.0.2:3000',
+  'https://delphos-app-rho.vercel.app'
 ]; 
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir solicitudes sin origen (como Postman o apps móviles) o si están en la lista
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`[CORS BLOQUEADO] Intento de acceso desde: ${origin}`);
       callback(new Error('Petición bloqueada por políticas de seguridad de CORS'));
     }
   },
@@ -40,18 +43,11 @@ app.use(cors({
 // Middleware para que Express entienda JSON
 app.use(express.json());
 
-// Ruta de prueba
-app.get('/test-db', async (req: Request, res: Response) => {
-  try {
-    const { data, error } = await supabase.from('usuario').select('*');
-    if (error) throw error;
-    res.json({ mensaje: '¡Conexión exitosa a Supabase, chaval!', usuarios: data });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// ==========================================
+// 🛡️ CORRECCIÓN P0: Se eliminó el endpoint /test-db
+// ==========================================
 
-// APLICAMOS LAS RUTAS (Todas conservan su prefijo /api tal como las diseñaste)
+// APLICAMOS LAS RUTAS
 app.use('/api', usuarioRoutes);
 app.use('/api/estudio', estudioRoutes);
 app.use('/api/satisfaccion', satisfaccionRoutes);
