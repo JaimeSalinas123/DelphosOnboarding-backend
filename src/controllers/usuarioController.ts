@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { registrarAuditoria } from '../utils/auditoriaHelper'; // <-- IMPORTAMOS EL HELPER
+import { registrarAuditoria } from '../utils/auditoriaHelper'; 
 
 // Registro de nuevos usuarios
 export const registrarUsuario = async (req: Request, res: Response): Promise<void> => {
@@ -23,7 +23,8 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
     });
 
     if (authError) {
-       res.status(400).json({ error: authError.message });
+       // 🛡️ CORRECCIÓN P1 (F-07): Evitamos exponer mensajes crudos del proveedor
+       res.status(400).json({ error: 'Error al procesar el registro de autenticación.' });
        return;
     }
 
@@ -41,16 +42,23 @@ export const registrarUsuario = async (req: Request, res: Response): Promise<voi
 
       if (dbError) {
          if (dbError.code === '23505') {
-           res.status(400).json({ error: 'La dirección de correo ya se encuentra registrada.' });
+           // 🛡️ CORRECCIÓN P1 (F-08): Prevenimos la enumeración de usuarios.
+           // Respondemos como si fuera éxito para no revelar que el correo ya existe.
+           res.status(201).json({ 
+             mensaje: 'El proceso de registro ha concluido. Si los datos son válidos, la cuenta ha sido creada.',
+             usuarioId: 'pendiente'
+           });
            return;
          }
-         res.status(400).json({ error: dbError.message });
+         // 🛡️ CORRECCIÓN P1 (F-07): Ocultamos errores internos de la BD
+         res.status(400).json({ error: 'Error al registrar los datos del usuario en el sistema.' });
          return;
       }
     }
 
+    // 🛡️ Generalizamos el mensaje de éxito real para que empate con el mensaje anti-enumeración
     res.status(201).json({ 
-        mensaje: '¡Usuario registrado con éxito en Delphos Onboarding!', 
+        mensaje: 'El proceso de registro ha concluido. Si los datos son válidos, la cuenta ha sido creada.', 
         usuarioId: authData.user?.id 
     });
 
@@ -81,17 +89,13 @@ export const obtenerUsuarios = async (req: Request, res: Response): Promise<void
       query = query.ilike('nombre', `%${nombre}%`);
     }
 
-    // Se ordena ANTES de paginar, así "administrador" queda primero de forma
-    // real (across todas las páginas), no solo dentro de la página que ya
-    // llegó del servidor. Aprovecha que 'administrador' < 'evaluador' <
-    // 'nuevo_integrante' alfabéticamente: si algún día cambian los valores
-    // del enum de rol, esto hay que revisarlo (o pasar a un rank explícito).
     query = query.order('rol', { ascending: true }).order('nombre', { ascending: true });
 
     const { data, error, count } = await query.range(desde, hasta);
 
     if (error) {
-      res.status(400).json({ error: error.message });
+      // 🛡️ CORRECCIÓN P1 (F-07): Ocultamos errores internos de la BD
+      res.status(400).json({ error: 'Error al obtener la lista de usuarios.' });
       return;
     }
 
@@ -115,7 +119,7 @@ export const actualizarRolUsuario = async (req: Request, res: Response): Promise
   const { rol } = req.body;
 
   try {
-    // 1. OBTENEMOS EL ROL VIEJO ANTES DE CAMBIARLO (Para poder revertirlo después)
+    // 1. OBTENEMOS EL ROL VIEJO ANTES DE CAMBIARLO 
     const { data: usuarioViejo, error: errorBusqueda } = await supabase
       .from('usuario')
       .select('nombre, rol')
@@ -133,7 +137,8 @@ export const actualizarRolUsuario = async (req: Request, res: Response): Promise
       .single();
 
     if (error) {
-      res.status(400).json({ error: error.message });
+      // 🛡️ CORRECCIÓN P1 (F-07): Ocultamos errores internos de la BD
+      res.status(400).json({ error: 'Error al intentar actualizar el rol del usuario.' });
       return;
     }
 
@@ -142,7 +147,7 @@ export const actualizarRolUsuario = async (req: Request, res: Response): Promise
       return;
     }
 
-    // 3. REGISTRAMOS EN LA AUDITORÍA (Guardamos el rol viejo en datos_originales)
+    // 3. REGISTRAMOS EN LA AUDITORÍA
     const admin = (req as any).user;
     if (admin) {
       await registrarAuditoria({
@@ -203,12 +208,16 @@ export const solicitarRecuperacion = async (req: Request, res: Response): Promis
   const { email } = req.body;
 
   try {
+    // 🛡️ CORRECCIÓN P1 (F-13): Usar variable de entorno para la redirección dinámica
+    const urlFrontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:3000/resetear-password',
+      redirectTo: `${urlFrontend}/resetear-password`,
     });
 
     if (error) {
-       res.status(400).json({ error: error.message });
+       // 🛡️ CORRECCIÓN P1 (F-07): Ocultamos errores internos de Supabase
+       res.status(400).json({ error: 'Error al procesar la solicitud de recuperación.' });
        return;
     }
 
@@ -239,7 +248,8 @@ export const resetearPassword = async (req: Request, res: Response): Promise<voi
     });
 
     if (updateError) {
-      res.status(400).json({ error: updateError.message });
+      // 🛡️ CORRECCIÓN P1 (F-07): Ocultamos errores internos
+      res.status(400).json({ error: 'No se pudo actualizar la contraseña. Intente nuevamente.' });
       return;
     }
 
